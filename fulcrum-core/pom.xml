@@ -1,0 +1,112 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0
+         http://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+
+  <parent>
+    <groupId>com.bestudios</groupId>
+    <artifactId>fulcrum-parent</artifactId>
+    <version>0.1-BETA</version>
+  </parent>
+
+  <artifactId>fulcrum-core</artifactId>
+  <packaging>jar</packaging>
+
+  <name>Fulcrum Core</name>
+  <description>Core implementation of Fulcrum Framework - the actual plugin</description>
+
+  <dependencies>
+    <!-- Fulcrum API -->
+    <dependency>
+      <groupId>${project.groupId}</groupId>
+      <artifactId>fulcrum-api</artifactId>
+    </dependency>
+
+    <!-- Paper API -->
+    <dependency>
+      <groupId>io.papermc.paper</groupId>
+      <artifactId>paper-api</artifactId>
+    </dependency>
+
+    <!-- Example: Database support -->
+    <!--
+    <dependency>
+        <groupId>com.zaxxer</groupId>
+        <artifactId>HikariCP</artifactId>
+        <version>5.1.0</version>
+    </dependency>
+    -->
+  </dependencies>
+
+  <build>
+    <finalName>Fulcrum-${project.version}</finalName>
+    <resources>
+      <resource>
+        <directory>src/main/resources</directory>
+        <filtering>true</filtering>
+      </resource>
+    </resources>
+
+    <plugins>
+      <!-- Compiler Plugin -->
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-compiler-plugin</artifactId>
+      </plugin>
+
+      <!-- Shade Plugin - Bundle everything into one JAR -->
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-shade-plugin</artifactId>
+        <executions>
+          <execution>
+            <phase>package</phase>
+            <goals>
+              <goal>shade</goal>
+            </goals>
+            <configuration>
+              <createDependencyReducedPom>false</createDependencyReducedPom>
+
+              <!-- Relocate dependencies to avoid conflicts -->
+              <relocations>
+                <!-- Example: Relocate any shaded dependencies -->
+                <!--
+                <relocation>
+                    <pattern>com.zaxxer.hikari</pattern>
+                    <shadedPattern>io.github.yourusername.fulcrum.libs.hikari</shadedPattern>
+                </relocation>
+                -->
+              </relocations>
+
+              <!-- Filters -->
+              <filters>
+                <filter>
+                  <artifact>*:*</artifact>
+                  <excludes>
+                    <exclude>META-INF/*.SF</exclude>
+                    <exclude>META-INF/*.DSA</exclude>
+                    <exclude>META-INF/*.RSA</exclude>
+                  </excludes>
+                </filter>
+              </filters>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+
+      <!-- Generate Sources JAR -->
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-source-plugin</artifactId>
+      </plugin>
+
+      <!-- Generate Javadoc JAR -->
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-javadoc-plugin</artifactId>
+      </plugin>
+    </plugins>
+  </build>
+</project>

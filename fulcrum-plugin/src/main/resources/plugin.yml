@@ -1,0 +1,7 @@
+name: Fulcrum
+version: '0.1-BETA'
+main: com.bestudios.fulcrum.Fulcrum
+api-version: '1.20'
+authors: [Nico Visci]
+description: Comprehensive framework and API for Minecraft plugin development that streamlines the creation of Paper and Spigot plugins
+website: https://github.com/BlackEden-Studios
