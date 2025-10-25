@@ -1,0 +1,85 @@
+@startuml Fulcrum API Architecture
+!theme plain
+skinparam classAttributeIconSize 0
+skinparam linetype ortho
+skinparam packageStyle rectangle
+
+title Fulcrum Plugin Framework - API Class Diagram
+
+' ===== Bukkit/Paper API Classes =====
+package "Bukkit/Paper API" <<Rectangle>> #PowderBlue{
+    abstract class JavaPlugin {
+        +onEnable(): void
+        +onDisable(): void
+        +getName(): String
+        +getServer(): Server
+    }
+
+    interface CommandExecutor {
+        +onCommand(sender, command, label, args): boolean
+    }
+
+    interface TabCompleter {
+        +onTabComplete(sender, command, alias, args): List<String>
+    }
+}
+
+' ===== Fulcrum API Package =====
+package "api.basics" <<Rectangle>> #PaleGreen{
+
+    ' FulcrumPlugin Interface
+    interface FulcrumPlugin {
+        +isDebugMode(): boolean
+        +toLog(message): void
+        +toLog(message, debug): void
+        +toLog(messages): void
+        +toLog(messages, debug): void
+    }
+
+    ' AbstractFulcrumPlugin
+    abstract class AbstractFulcrumPlugin #Gold {
+    }
+}
+
+' ===== Fulcrum Utils Package =====
+package "api.utils" <<Rectangle>> #Red {
+
+    ' CommandWrapper Main Class
+    class CommandWrapper #Bisque{
+        -basePermission: String
+        -rootNode: CommandNode
+        -usageMessage: String
+        +onCommand(sender, command, label, args): boolean
+        +onTabComplete(sender, command, alias, args): List<String>
+        -registerCommand(path, action): void
+        -registerCommand(path, action, permission): void
+        -registerPlayerCommand(path, action): void
+        -registerTabCompleter(path, action): void
+    }
+}
+
+' ===== Fulcrum Managers Package =====
+package "api.managers" <<Rectangle>> #DarkViolet{
+
+    class CommandsManager #Gold{
+        -commandWrapper: CommandWrapper
+        +CommandsManager(basePermission, defaultCommands, playerCommands, tabCompleters)
+        +getCommandExecutor(): CommandWrapper
+        +getTabCompleter(): CommandWrapper
+    }
+}
+
+' ===== Relationships =====
+
+' Inheritance - moved to top for visual clarity
+JavaPlugin <|-- AbstractFulcrumPlugin
+AbstractFulcrumPlugin ..|> FulcrumPlugin
+
+' Interface Implementation
+CommandWrapper ..|> CommandExecutor
+CommandWrapper ..|> TabCompleter
+
+' Aggregation - CommandsManager manages CommandWrapper
+CommandsManager o-- CommandWrapper
+
+@enduml
