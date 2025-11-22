@@ -6,9 +6,11 @@ import org.jetbrains.annotations.Nullable;
 
 /**
  * A wrapper class to encapsulate command metadata in a Minecraft plugin.
- *
- * @see CommandTree
+  *
+ * @author Bestialus
+ * @version 1.0
  * @since 1.0
+ * @see CommandTree
  */
 public record CommandWrapper(
         String commandPath,

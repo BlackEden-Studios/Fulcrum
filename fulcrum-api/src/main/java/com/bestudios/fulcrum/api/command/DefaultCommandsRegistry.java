@@ -25,6 +25,8 @@ import java.util.concurrent.ConcurrentHashMap;
  * registry.register("mycommand", commandTree);
  * }</pre>
  *
+ * @author Bestialus
+ * @version 1.0
  * @since 1.0
  * @see CommandsRegistry
  * @see CommandTree

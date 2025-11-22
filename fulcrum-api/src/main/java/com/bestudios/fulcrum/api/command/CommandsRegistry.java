@@ -17,6 +17,9 @@ import java.util.Map;
  * both {@link CommandExecutor} and {@link TabCompleter} interfaces.</p>
  *
  * @param <T> the type of command handler that implements both CommandExecutor and TabCompleter
+ *
+ * @author Bestialus
+ * @version 1.0
  * @since 1.0
  * @see CommandExecutor
  * @see TabCompleter

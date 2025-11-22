@@ -25,8 +25,11 @@ import java.util.stream.Collectors;
  * <p></p>
  * Supports command trees like: /plugin_name command subcommand args...
  * <p></p>
- * @see CommandWrapper
+ *
+ * @author Bestialus
+ * @version 1.0
  * @since 1.0
+ * @see CommandWrapper
  */
 public class CommandTree implements CommandExecutor, TabCompleter {
 

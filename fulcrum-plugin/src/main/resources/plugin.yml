@@ -1,7 +1,9 @@
 name: Fulcrum
-version: '0.1-BETA'
+version: ${version}
 main: com.bestudios.fulcrum.Fulcrum
-api-version: '1.20'
-authors: [Nico Visci]
+api-version: '1.21.10'
+authors: [Bestialus]
+prefix: Fulcrum
+softdepend: [VaultAPI, Lands, LuckPerms, ItemsAdder]
 description: Comprehensive framework and API for Minecraft plugin development that streamlines the creation of Paper and Spigot plugins
 website: https://github.com/BlackEden-Studios

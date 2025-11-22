@@ -1,0 +1,15 @@
+debug: true
+test_listener: false
+language: it
+number_of_vip_bundles: 5
+### Database config ###
+database:
+  host: localhost
+  port: port
+  password: password
+  database: 0
+  max_connections: 16
+### Timer related configs ###
+timer:
+  update_time: 86400 # 1 day in seconds
+  daily_reset_hour: 6 # (From 0 to 23)

@@ -22,12 +22,13 @@ import java.io.File;
  *     .build();
  * YamlConfiguration config = holder.getConfig();
  * }</pre>
- * </p>
  *
  * @param <ConfigurationT> The type of FileConfiguration (usually {@link org.bukkit.configuration.file.YamlConfiguration})
  *
- * @see ConfigurationsRegistry
+ * @author Bestialus
+ * @version 1.0
  * @since 1.0
+ * @see ConfigurationsRegistry
  */
 public interface ConfigurationHolder<ConfigurationT extends FileConfiguration> {
 

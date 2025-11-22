@@ -9,6 +9,8 @@ import org.jetbrains.annotations.NotNull;
  * different configuration files used by the plugin. Implementations should
  * provide thread-safe access to the configurations.</p>
  *
+ * @author Bestialus
+ * @version 1.0
  * @since 1.0
  * @see ConfigurationHolder
  */

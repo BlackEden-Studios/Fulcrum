@@ -1,6 +1,6 @@
 package com.bestudios.fulcrum.api.configuration;
 
-import com.bestudios.fulcrum.api.basic.AbstractFulcrumPlugin;
+import com.bestudios.fulcrum.api.basic.FulcrumPlugin;
 import com.bestudios.fulcrum.api.util.Utils;
 import org.bukkit.configuration.file.YamlConfiguration;
 import java.io.*;
@@ -19,7 +19,6 @@ import java.nio.charset.StandardCharsets;
  *
  * The configuration file is based on Bukkit's {@link YamlConfiguration} system
  * and automatically ensures the data folder exists before loading configurations.
- * </p>
  *
  * <p>
  * Example usage:
@@ -32,16 +31,16 @@ import java.nio.charset.StandardCharsets;
  * YamlConfiguration config = holder.getConfig();
  * config.getString("database.username");
  * }</pre>
- * </p>
- * @see ConfigurationHolder
- * @see ConfigurationsRegistry
+ *
  * @author Bestialus
  * @version 1.0
  * @since 1.0
+ * @see ConfigurationHolder
+ * @see ConfigurationsRegistry
  */
 public class DefaultConfigurationHolder implements ConfigurationHolder<YamlConfiguration> {
 
-  protected final AbstractFulcrumPlugin plugin;
+  protected final FulcrumPlugin plugin;
   protected YamlConfiguration config;
   protected File configFile;
   protected File dataFolder;
@@ -53,7 +52,7 @@ public class DefaultConfigurationHolder implements ConfigurationHolder<YamlConfi
    * @param dataFolder The directory where configuration files are stored.
    * @param configFile The target configuration file.
    */
-  private DefaultConfigurationHolder(AbstractFulcrumPlugin plugin, File dataFolder, File configFile) {
+  private DefaultConfigurationHolder(FulcrumPlugin plugin, File dataFolder, File configFile) {
     this.plugin = plugin;
     this.dataFolder = dataFolder;
     this.configFile = configFile;
@@ -65,7 +64,7 @@ public class DefaultConfigurationHolder implements ConfigurationHolder<YamlConfi
    */
   public static class Builder {
 
-    private final AbstractFulcrumPlugin plugin;
+    private final FulcrumPlugin plugin;
     private File dataFolder;
     private String fileName;
 
@@ -75,7 +74,7 @@ public class DefaultConfigurationHolder implements ConfigurationHolder<YamlConfi
      * @param plugin The plugin associated with the configuration file.
      *               Must not be {@code null}.
      */
-    public Builder(AbstractFulcrumPlugin plugin) {
+    public Builder(FulcrumPlugin plugin) {
       this.plugin = plugin;
       this.dataFolder = plugin.getDataFolder();
     }

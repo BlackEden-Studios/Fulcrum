@@ -3,13 +3,17 @@ plugins {
 }
 
 allprojects {
-    group = "com.bestudios.fulcrum"
-    version = "1.0.0"
+    group = "io.github.BlackEden-Studios"
+    version = "0.1-BETA"
 
     repositories {
         mavenCentral()
         maven("https://repo.papermc.io/repository/maven-public/")
+        maven("https://jitpack.io")
+        maven("https://repo.codemc.io/repository/creatorfromhell/")
+        maven("https://maven.devs.beer/")
     }
+
 }
 
 subprojects {

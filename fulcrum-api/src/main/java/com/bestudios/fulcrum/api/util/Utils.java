@@ -1,6 +1,20 @@
 package com.bestudios.fulcrum.api.util;
 
+/**
+ * Utility class for common tasks in Fulcrum plugins.
+ *
+ * @author Bestialus
+ * @version 1.0
+ * @since 1.0
+ */
 public class Utils {
+
+  public static String capitalizeFirst(String str) {
+    if (str == null || str.isEmpty()) {
+      return str;
+    }
+    return str.substring(0, 1).toUpperCase() + str.substring(1);
+  }
 
   public static int compareVersions(String v1, String v2) {
     int i = 0, j = 0;
