@@ -7,7 +7,7 @@ package com.bestudios.fulcrum.api.util;
  * @version 1.0
  * @since 1.0
  */
-public class Utils {
+public final class Utils {
 
   public static String capitalizeFirst(String str) {
     if (str == null || str.isEmpty()) {
@@ -46,5 +46,26 @@ public class Utils {
 
     return 0;
   }
+
+  /**
+   * Returns a message indicating that the specified object is required to be non-empty.
+   * @param objName The name of the object to be checked.
+   * @return A message indicating that the specified object is required to be non-empty.
+   */
+  public static String messageRequireNonEmpty(String objName) {
+    return "The " + objName + " cannot be empty";
+  }
+
+  /**
+   * Returns a message indicating that the specified object is required to be non-null.
+   * @param objName The name of the object to be checked.
+   * @return A message indicating that the specified object is required to be non-null.
+   */
+  public static String messageRequireNonNull(String objName) {
+    return "The " + objName + " cannot be null";
+  }
+
+  /** Private Constructor */
+  private Utils() { }
 
 }

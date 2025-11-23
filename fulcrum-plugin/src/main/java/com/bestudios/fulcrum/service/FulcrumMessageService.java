@@ -5,6 +5,7 @@ import com.bestudios.fulcrum.api.database.DatabaseGateway;
 import com.bestudios.fulcrum.api.database.DatabaseQuery;
 import com.bestudios.fulcrum.api.service.messaging.Message;
 import com.bestudios.fulcrum.api.service.messaging.MessageService;
+import com.bestudios.fulcrum.api.util.Utils;
 import com.bestudios.fulcrum.database.RedisQuery;
 import org.bukkit.plugin.ServicePriority;
 import org.jetbrains.annotations.NotNull;
@@ -38,16 +39,16 @@ public class FulcrumMessageService implements MessageService {
    * @param gateway The database gateway instance
    */
   public FulcrumMessageService(@NotNull FulcrumPlugin plugin, @NotNull ServicePriority priority, @NotNull DatabaseGateway gateway) {
-    this.plugin = Objects.requireNonNull(plugin, "Plugin cannot be null");
-    this.priority = Objects.requireNonNull(priority, "Priority cannot be null");
-    this.gateway = Objects.requireNonNull(gateway, "Gateway cannot be null");
+    this.plugin   = Objects.requireNonNull(plugin,   Utils.messageRequireNonNull("plugin"));
+    this.priority = Objects.requireNonNull(priority, Utils.messageRequireNonNull("priority"));
+    this.gateway  = Objects.requireNonNull(gateway,  Utils.messageRequireNonNull("gateway"));
   }
 
   @Override @NotNull
   public CompletableFuture<Boolean> sendMessage(@NotNull String channel, @NotNull UUID playerUUID, @NotNull Message message) {
-    Objects.requireNonNull(channel, "Channel cannot be null");
-    Objects.requireNonNull(playerUUID, "Player UUID cannot be null");
-    Objects.requireNonNull(message, "Message cannot be null");
+    Objects.requireNonNull(channel,    Utils.messageRequireNonNull("channel"));
+    Objects.requireNonNull(playerUUID, Utils.messageRequireNonNull("player UUID"));
+    Objects.requireNonNull(message,    Utils.messageRequireNonNull("message"));
     // Create a future for the operation
     return CompletableFuture.supplyAsync(() -> {
       try {
@@ -80,8 +81,8 @@ public class FulcrumMessageService implements MessageService {
 
   @Override @NotNull
   public CompletableFuture<List<Message>> retrieveMessages(@NotNull String channel, @NotNull UUID playerUUID) {
-    Objects.requireNonNull(channel, "Channel cannot be null");
-    Objects.requireNonNull(playerUUID, "Player UUID cannot be null");
+    Objects.requireNonNull(channel,    Utils.messageRequireNonNull("channel"));
+    Objects.requireNonNull(playerUUID, Utils.messageRequireNonNull("player UUID"));
 
     return CompletableFuture.supplyAsync(() -> {
       try {
@@ -109,8 +110,8 @@ public class FulcrumMessageService implements MessageService {
 
   @Override
   public @NotNull CompletableFuture<Message> consumeMessage(@NotNull String channel, @NotNull UUID playerUUID) {
-    Objects.requireNonNull(channel, "Channel cannot be null");
-    Objects.requireNonNull(playerUUID, "Player UUID cannot be null");
+    Objects.requireNonNull(channel,    Utils.messageRequireNonNull("channel"));
+    Objects.requireNonNull(playerUUID, Utils.messageRequireNonNull("player UUID"));
 
     CompletableFuture<Message> future = retrieveMessage(channel, playerUUID);
     return future.thenApplyAsync(message -> {
@@ -126,8 +127,8 @@ public class FulcrumMessageService implements MessageService {
 
   @Override @NotNull
   public CompletableFuture<List<Message>> consumeMessages(@NotNull String channel, @NotNull UUID playerUUID) {
-    Objects.requireNonNull(channel, "Channel cannot be null");
-    Objects.requireNonNull(playerUUID, "Player UUID cannot be null");
+    Objects.requireNonNull(channel,    Utils.messageRequireNonNull("channel"));
+    Objects.requireNonNull(playerUUID, Utils.messageRequireNonNull("player UUID"));
 
     CompletableFuture<List<Message>> future = retrieveMessages(channel, playerUUID);
     return future.thenApply(messages -> {
@@ -143,8 +144,8 @@ public class FulcrumMessageService implements MessageService {
 
   @Override @NotNull
   public CompletableFuture<Boolean> hasMessages(@NotNull String channel, @NotNull UUID playerUUID) {
-    Objects.requireNonNull(channel, "Channel cannot be null");
-    Objects.requireNonNull(playerUUID, "Player UUID cannot be null");
+    Objects.requireNonNull(channel,    Utils.messageRequireNonNull("channel"));
+    Objects.requireNonNull(playerUUID, Utils.messageRequireNonNull("player UUID"));
 
     return CompletableFuture.supplyAsync(() -> {
       try {
@@ -160,7 +161,7 @@ public class FulcrumMessageService implements MessageService {
 
   @Override @NotNull
   public CompletableFuture<Boolean> clearMessages(@NotNull String channel, @NotNull UUID playerUUID) {
-    Objects.requireNonNull(playerUUID, "Player UUID cannot be null");
+    Objects.requireNonNull(playerUUID, Utils.messageRequireNonNull("player UUID"));
 
     return CompletableFuture.supplyAsync(() -> {
       try {
@@ -177,7 +178,7 @@ public class FulcrumMessageService implements MessageService {
 
   @Override @NotNull
   public CompletableFuture<Boolean> clearAllMessages(@NotNull UUID playerUUID) {
-    Objects.requireNonNull(playerUUID, "Player UUID cannot be null");
+    Objects.requireNonNull(playerUUID, Utils.messageRequireNonNull("player UUID"));
     return CompletableFuture.supplyAsync(() -> {
       try {
         DatabaseQuery query = new RedisQuery(MESSAGE_PREFIX, playerUUID.toString());

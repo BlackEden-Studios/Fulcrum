@@ -40,7 +40,7 @@ public class LuckPermsBridge implements PermissionsService {
   /** The LuckPerms API instance */
   private final LuckPerms api;
   /** The name of the permission provider */
-  private final String PROVIDER = "LuckPerms";
+  private static final String PROVIDER = "LuckPerms";
 
   /**
    * Constructor for LuckPermsBridge.
@@ -52,10 +52,7 @@ public class LuckPermsBridge implements PermissionsService {
     this.plugin = plugin;
     this.priority = priority;
     var provider = Bukkit.getServicesManager().getRegistration(LuckPerms.class);
-    if (provider != null)
-      this.api = provider.getProvider();
-    else
-      this.api = null;
+    this.api = (provider != null) ? provider.getProvider() : null;
   }
 
   /**

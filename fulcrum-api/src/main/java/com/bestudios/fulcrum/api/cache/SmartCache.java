@@ -1,5 +1,6 @@
 package com.bestudios.fulcrum.api.cache;
 
+import com.bestudios.fulcrum.api.util.Utils;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
@@ -25,7 +26,15 @@ import java.util.concurrent.ConcurrentHashMap;
  * @see SessionCache
  */
 public class SmartCache<T> {
+
+  /**
+   * Default error message for null player IDs.
+   */
+  protected static final String NULL_ID_ERROR = Utils.messageRequireNonNull("player ID");
+
+  /** The cache implemented as a map */
   protected final ConcurrentHashMap<UUID, T> cache;
+  /** The plugin instance */
   protected final Plugin plugin;
 
   /**
@@ -36,12 +45,12 @@ public class SmartCache<T> {
    */
   public SmartCache(int maxEntries, @NotNull Plugin plugin) {
     this.cache = new ConcurrentHashMap<>(maxEntries);
-    this.plugin = Objects.requireNonNull(plugin, "Plugin cannot be null");
+    this.plugin = Objects.requireNonNull(plugin, Utils.messageRequireNonNull("plugin"));
     SmartCacheListener listener = new SmartCacheListener();
 
     plugin.getServer().getPluginManager().registerEvents(listener, plugin);
     plugin.getLogger().config("Registered " + this.getClass().getSimpleName() +
-            " with capacity for " + maxEntries + " entries");
+                              " with capacity for " + maxEntries + " entries");
   }
 
   /**
@@ -159,9 +168,4 @@ public class SmartCache<T> {
       }
     }
   }
-
-  /**
-   * Default error message for null player IDs.
-   */
-  protected final String NULL_ID_ERROR = "Player ID cannot be null";
 }

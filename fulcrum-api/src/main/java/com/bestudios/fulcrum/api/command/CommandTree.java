@@ -3,6 +3,7 @@ package com.bestudios.fulcrum.api.command;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import org.bukkit.Bukkit;
+import org.bukkit.OfflinePlayer;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
@@ -12,11 +13,11 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
@@ -33,13 +34,14 @@ import java.util.stream.Collectors;
  */
 public class CommandTree implements CommandExecutor, TabCompleter {
 
+  /** The root node of the command tree */
   private final CommandNode rootNode;
-  private String basePermission;
+  /** The base permission required to execute any command in this tree */
+  private @Nullable String basePermission;
+  /** The usage message for this command tree */
   private String usageMessage = "Nothing here yet. Try /plugin_name help.";
 
-  /**
-   * Creates a new CommandTree
-   */
+  /** Creates a new CommandTree */
   public CommandTree() {
     this.rootNode = new CommandNode();
   }
@@ -313,13 +315,17 @@ public class CommandTree implements CommandExecutor, TabCompleter {
   /**
    * Context for command execution, encapsulating sender, command, arguments, and remaining arguments.
    * This allows commands to access the sender, command name, full path, and remaining arguments easily.
+   *
+   * @param sender        The command sender (e.g., player or console)
+   * @param command       The command being executed (args + remainingArgs)
+   * @param args          The arguments used in the command path (e.g., "arg1 arg2" in "root arg1 arg2")
+   * @param remainingArgs The remaining arguments after the command path (e.g., "subcommand" in "command arg1subcommand")
    */
   public record CommandContext(
     CommandSender sender,
     Command command,
     String[] args,
-    String[] remainingArgs,
-    String fullPath)
+    String[] remainingArgs)
   {
 
     /**
@@ -342,7 +348,7 @@ public class CommandTree implements CommandExecutor, TabCompleter {
     }
 
     /**
-     * Gets the argument at the specified index from the remaining arguments, or returns a default value if out of bounds.
+     * Gets the argument at the specified index from the remaining arguments or returns a default value if out of bounds.
      *
      * @param index        the index of the argument to retrieve
      * @param defaultValue the default value to return if the index is out of bounds
@@ -559,14 +565,7 @@ public class CommandTree implements CommandExecutor, TabCompleter {
    * @param permission The permission required to execute this command
    */
   public void registerCommand(String path, CommandAction action, String permission) {
-    String[] parts = path.split("\\s+");
-    CommandNode current = rootNode;
-
-    for (String part : parts) {
-      current = current.getOrCreateChild(part);
-    }
-
-    current.setAction(action, permission);
+    this.findTargetNode(path.split("\\s+"), true).node.setAction(action, permission);
   }
 
   /**
@@ -589,14 +588,7 @@ public class CommandTree implements CommandExecutor, TabCompleter {
    * @param permission The permission required to execute this command
    */
   public void registerPlayerCommand(String path, PlayerCommandAction action, String permission) {
-    String[] parts = path.split("\\s+");
-    CommandNode current = rootNode;
-
-    for (String part : parts) {
-      current = current.getOrCreateChild(part);
-    }
-
-    current.setPlayerAction(action, permission);
+    this.findTargetNode(path.split("\\s+"), true).node.setPlayerAction(action, permission);
   }
 
   /**
@@ -607,14 +599,7 @@ public class CommandTree implements CommandExecutor, TabCompleter {
    * @param completer The function to handle tab completion for this command node
    */
   public void registerTabCompleter(String path, TabCompleteFunction completer) {
-    String[] parts = path.split("\\s+");
-    CommandNode current = rootNode;
-
-    for (String part : parts) {
-      current = current.getOrCreateChild(part);
-    }
-
-    current.setTabCompleter(completer);
+    this.findTargetNode(path.split("\\s+"), true).node.setTabCompleter(completer);
   }
 
   /**
@@ -630,67 +615,26 @@ public class CommandTree implements CommandExecutor, TabCompleter {
   public boolean onCommand(@NotNull CommandSender sender, @NotNull Command command,
                            @NotNull String label, @NotNull String[] args) {
 
-    // Check base permission
+    // 1. Base Checks
     if (basePermission != null && !sender.hasPermission(basePermission)) {
-      sender.sendMessage(Component.text("You don't have permission to use this command!").color(NamedTextColor.RED));
+      sender.sendMessage(Component.text("You don't have permission to use this command!")
+                                  .color(NamedTextColor.RED));
       return true;
     }
-    // Check if any arguments were provided
+
     if (args.length == 0) {
       sender.sendMessage(usageMessage);
       return true;
     }
 
-    // Navigate the command tree
-    CommandNode current = rootNode;
-    StringBuilder pathBuilder = new StringBuilder();
-    int consumedArgs = 0;
+    // 2. Traversal
+    TraversalResult result = findTargetNode(args, false);
 
-    for (int i = 0; i < args.length; i++) {
-      CommandNode child = current.getChild(args[i]);
-      if (child == null) {
-        break;
-      }
+    // 3. Construct Context with the found arguments
+    CommandContext context = new CommandContext(sender, command, result.processedArgs(), result.remainingArgs());
 
-      current = child;
-      pathBuilder.append(args[i]).append(" ");
-      consumedArgs = i + 1;
-
-      // If this node has an action, we could potentially execute it
-      if (current.hasAction()) {
-        // Check if there are more args that don't match children
-        boolean hasUnmatchedArgs = false;
-        if (i + 1 < args.length) {
-          CommandNode nextChild = current.getChild(args[i + 1]);
-          hasUnmatchedArgs = (nextChild == null);
-        }
-
-        // If no more matched children or this is the last arg, execute
-        if (hasUnmatchedArgs || i == args.length - 1) {
-          break;
-        }
-      }
-    }
-
-    // Check if we found an executable command
-    if (!current.hasAction()) {
-      sender.sendMessage("Unknown subcommand. " + usageMessage);
-      return true;
-    }
-
-    // Check specific permission for this command
-    if (current.hasPermission() && !sender.hasPermission(current.getPermission())) {
-      sender.sendMessage("You don't have permission to use this command!");
-      return true;
-    }
-
-    // Create context and execute
-    String[] remainingArgs = Arrays.copyOfRange(args, consumedArgs, args.length);
-    String fullPath = pathBuilder.toString().trim();
-
-    CommandContext context = new CommandContext(sender, command, args, remainingArgs, fullPath);
-
-    return current.execute(context);
+    // 4. Execution
+    return executeNode(result.node(), context);
   }
 
   /**
@@ -710,32 +654,108 @@ public class CommandTree implements CommandExecutor, TabCompleter {
     @NotNull String alias,
     @NotNull String[] args
   ) {
-    // Check base permission, if any
-    if (basePermission != null && !sender.hasPermission(basePermission)) {
+    // 1. Check base permission, if any
+    if (basePermission != null && !sender.hasPermission(basePermission))
       return Collections.emptyList();
-    }
-    // Navigate to the appropriate node for tab completion
-    CommandNode current = rootNode;
-    int depth = 0;
-    // Navigate as far as we can with complete arguments
-    for (int i = 0; i < args.length - 1; i++) {
-      CommandNode child = current.getChild(args[i]);
-      if (child == null) {
-        break;
-      }
-      current = child;
-      depth = i + 1;
-    }
 
-    // Get completions for the current partial argument
-    String partial = args.length > 0 ? args[args.length - 1] : "";
-    String[] remainingArgs = Arrays.copyOfRange(args, depth, args.length);
+    // 2. Traversal
+    TraversalResult result = findTargetNode(args, false);
 
-    CommandContext context = new CommandContext(sender, command, args, remainingArgs, "");
-    List<String> completions = current.complete(context);
+    // 3. Get the completions for the current node
+    CommandContext context = new CommandContext(sender, command, result.processedArgs(), result.remainingArgs());
+    List<String> completions = result.node.complete(context);
 
-    // Filter based on partial input
+    // 4. Get partial input for filtering
+    String partial = result.remainingArgs.length > 0 ? result.remainingArgs[0] : "";
+
+    // 5. Filter based on partial input
     return filterCompletions(completions, partial);
+  }
+
+  /**
+   * Represents the result of a command traversal.
+   * <p>
+   * This is used to store the deepest node matching the arguments, along with the command context for execution.
+   * @param node          The deepest node matching the arguments.
+   * @param processedArgs The arguments that were processed up to the deepest node.
+   * @param remainingArgs The remaining arguments after the deepest node was reached.
+   */
+  private record TraversalResult(CommandNode node, String[] processedArgs, String[] remainingArgs) {}
+
+  /**
+   * State holder for command traversal.
+   * <p>
+   * This holds the state as we iterate through the arguments.
+   */
+  private static class TraversalState {
+    CommandNode currentNode;
+    List<String> processedArgs;
+    List<String> remainingArgs;
+    boolean pathBroken;
+
+    TraversalState(CommandNode root) {
+      this.currentNode = root;
+      this.processedArgs = new ArrayList<>();
+      this.remainingArgs = new ArrayList<>();
+      this.pathBroken = false;
+    }
+  }
+
+  /**
+   * Traverses the tree to find the deepest executable node matching the arguments.
+   *
+   * @param args                The arguments to traverse with.
+   * @param createNewNodeIfNull If true, a new node will be created if none exists for the current argument.
+   * @return The traversal result containing the deepest node and remaining arguments.
+   */
+  private TraversalResult findTargetNode(String[] args, boolean createNewNodeIfNull) {
+    // Start at root with empty args
+    TraversalState state = new TraversalState(rootNode);
+    //
+    for (String arg : args) {
+      // If the path was already broken (we hit an argument that wasn't a subcommand),
+      // we stop checking for children and treat everything else as parameters.
+      if (state.pathBroken)
+        state.remainingArgs.add(arg);
+
+      // Try to find the child
+      CommandNode child = createNewNodeIfNull ? state.currentNode.getOrCreateChild(arg) : state.currentNode.getChild(arg);
+
+      if (child != null) {
+        // If child found: it becomes the current node for the next iteration
+        state.currentNode = child;
+        state.processedArgs.add(arg);
+      } else {
+        // If no child found: the path ends here.
+        // This arg and all later args are "remaining args".
+        state.pathBroken = true;
+        state.remainingArgs.add(arg);
+      }
+    }
+
+    return new TraversalResult(
+            state.currentNode,
+            state.processedArgs.toArray(String[]::new),
+            state.remainingArgs.toArray(String[]::new)
+    );
+  }
+
+  /**
+   * Validates permission and executes the found node.
+   */
+  private boolean executeNode(CommandNode node, CommandContext context) {
+    // Check action, if any
+    if (!node.hasAction()) {
+      context.sender.sendMessage("Unknown subcommand. " + usageMessage);
+      return true;
+    }
+    // Check permission, if any
+    if (node.hasPermission() && !context.sender.hasPermission(node.getPermission())) {
+      context.sender.sendMessage("You don't have permission to use this command!");
+      return true;
+    }
+    // Execute action, if any
+    return node.execute(context);
   }
 
   /**
@@ -761,14 +781,16 @@ public class CommandTree implements CommandExecutor, TabCompleter {
    * @return A list of player names that match the partial input
    */
   public static List<String> playerTabCompletions(CommandContext context, int playerArgIndex) {
-
+    // 1. Check if there are enough arguments to provide the player argument
     if (context.remainingArgs().length <= playerArgIndex) {
-      String partial = context.remainingArgs().length > (playerArgIndex - 1) ? context.remainingArgs()[(playerArgIndex - 1)] : "";
+      String partial = context.remainingArgs().length > (playerArgIndex - 1) ?
+                               context.remainingArgs()[(playerArgIndex - 1)] :
+                               "";
 
       return Bukkit.getOnlinePlayers().stream()
-              .map(Player::getName)
-              .filter(name -> name.toLowerCase().startsWith(partial.toLowerCase()))
-              .collect(Collectors.toList());
+                                      .map(Player::getName)
+                                      .filter(name -> name.toLowerCase().startsWith(partial.toLowerCase()))
+                                      .collect(Collectors.toList());
     }
     return List.of();
   }
@@ -779,29 +801,44 @@ public class CommandTree implements CommandExecutor, TabCompleter {
    * If the target player is not found or not online, it sends an error message.
    *
    * @param context        The command context
-   * @param playerArgIndex The index of the argument where the player name is expected
+   * @param playerArgIndex The index of the argument where the player name is expected (starting at 1)
    * @return The target player or null if not found
    */
-  public static Player getTargetPlayer(CommandContext context, int playerArgIndex) {
-    if (playerArgIndex < 1) throw new IllegalArgumentException("Player argument index must be 1 or greater");
-    Player targetPlayer;
-    if (context.remainingArgs() == null || context.remainingArgs().length < playerArgIndex) {
-      if (context.isPlayer()) {
-        targetPlayer = context.getPlayer();
-        return targetPlayer;
-      } else {
-        context.sender().sendMessage(Component.text("Implicit target could not be used in console version")
-                .color(NamedTextColor.RED));
-        return null;
-      }
-    }
-    // Get the player name from the specified argument index
-    targetPlayer = Bukkit.getPlayer(context.remainingArgs()[playerArgIndex - 1]);
+  @Nullable
+  public static Player getTargetPlayer(CommandContext context, int playerArgIndex, boolean implicitSender) {
+    // 1. Check if there are enough arguments to provide the player argument
+    if (context.remainingArgs().length >= playerArgIndex)
+      return Bukkit.getPlayer(context.remainingArgs()[playerArgIndex - 1]);
+    // 2. Check if the sender implicitly provides the player argument
+    if (context.isPlayer() && implicitSender) return context.getPlayer();
+    // 3. No arguments and console sender: return null
+    return null;
+  }
 
-    if (targetPlayer == null || !targetPlayer.isOnline()) {
-      context.sender().sendMessage(Component.text("Player not found or not online!").color(NamedTextColor.RED));
-      return null;
-    }
-    return targetPlayer;
+  /**
+   * Asynchronously retrieves a target OfflinePlayer.
+   * <p>
+   * Priority:
+   * 1. If an argument exists at the index, lookup that player (Async).
+   * 2. If no argument exists and sender is a player, return sender (Sync).
+   * 3. Otherwise, return null.
+   *
+   * @param context        The command context
+   * @param playerArgIndex The index of the argument (starting at 1)
+   * @return A CompletableFuture containing the OfflinePlayer or null
+   */
+  public static CompletableFuture<OfflinePlayer> getTargetOfflinePlayerAsync(CommandContext context, int playerArgIndex, boolean implicitSender) {
+    // 1. Check if the user provided a specific argument
+    if (context.remainingArgs().length >= playerArgIndex)
+      // Run the lookup on a separate thread to avoid blocking the main server tick
+      return CompletableFuture.supplyAsync(() -> {
+        // This method might trigger a web request to Mojang
+        return Bukkit.getOfflinePlayer(context.remainingArgs()[playerArgIndex - 1]);
+      });
+    // 2. Fallback: If no argument is provided, use the sender if they are a player
+    if (context.isPlayer() && implicitSender) { return CompletableFuture.completedFuture(context.getPlayer()); }
+    // 3. No argument and console sender: return null
+    return CompletableFuture.completedFuture(null);
   }
 }
+

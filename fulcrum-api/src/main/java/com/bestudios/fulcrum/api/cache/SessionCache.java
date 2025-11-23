@@ -1,5 +1,6 @@
 package com.bestudios.fulcrum.api.cache;
 
+import com.bestudios.fulcrum.api.util.Utils;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
@@ -18,7 +19,7 @@ import java.util.UUID;
  *
  * @author Bestialus
  * @version 1.0
- * @since 1.0
+ * @since   1.0
  * @see SmartCache
  */
 public class SessionCache<T> extends SmartCache<T> {
@@ -36,7 +37,7 @@ public class SessionCache<T> extends SmartCache<T> {
    */
   public SessionCache(int maxEntries, @NotNull Plugin plugin, @NotNull PlayerDataLoader<T> dataLoader) {
     super(maxEntries, plugin);
-    this.dataLoader = Objects.requireNonNull(dataLoader, "Data loader cannot be null");
+    this.dataLoader = Objects.requireNonNull(dataLoader, Utils.messageRequireNonNull("data loader"));
     SessionCacheListener sessionListener = new SessionCacheListener();
 
     plugin.getServer().getPluginManager().registerEvents(sessionListener, plugin);

@@ -44,7 +44,7 @@ import java.util.logging.Level;
  * additional configurations. Always call {@code super.onEnable()} to ensure
  * proper initialization of the base functionality.</p>
  *
- * <p>Same goes for {@link #additionalTerminationTasks()} in {@link #onDisable()} to handle any cleanup tasks.</p>
+ * <p>The same goes for {@link #additionalTerminationTasks()} in {@link #onDisable()} to handle any cleanup tasks.</p>
  *
  * <p>The default configuration structure expects:</p>
  * <ul>
@@ -62,7 +62,7 @@ import java.util.logging.Level;
 public abstract class FulcrumPlugin extends JavaPlugin{
 
   /** Default language id code used if none is specified in the configuration. */
-  private final String DEFAULT_LANGUAGE = "en";
+  private static final String DEFAULT_LANGUAGE = "en";
 
   /** Registry for commands*/
   private CommandsRegistry<CommandTree, CommandWrapper> commandsRegistry;
@@ -71,7 +71,7 @@ public abstract class FulcrumPlugin extends JavaPlugin{
   /** Service registry */
   private ServiceRegistry servicesRegistry;
   /** Debug mode flag */
-  private boolean debugMode = false;
+  private boolean debugMode;
 
   /**
    * This method is called when the plugin is enabled.
