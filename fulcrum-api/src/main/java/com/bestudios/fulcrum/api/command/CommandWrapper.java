@@ -82,11 +82,11 @@ public record CommandWrapper(
    * Builder class for creating CommandWrapper instances
    */
   public static class Builder {
-    private String commandPath = null;
-    private CommandAction commandAction = null;
-    private PlayerCommandAction playerCommandAction = null;
-    private TabCompleteFunction tabCompleter = null;
-    private String permission = null;
+    private String commandPath;
+    private CommandAction commandAction;
+    private PlayerCommandAction playerCommandAction;
+    private TabCompleteFunction tabCompleter;
+    private String permission;
 
     /**
      * Sets the command path (required)
