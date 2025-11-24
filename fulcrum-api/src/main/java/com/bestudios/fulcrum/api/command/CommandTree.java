@@ -22,10 +22,9 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
 /**
- * A functional approach to handling nested Minecraft commands
- * <p></p>
+ * A functional approach to handling nested Minecraft commands.
+ * <p>
  * Supports command trees like: /plugin_name command subcommand args...
- * <p></p>
  *
  * @author Bestialus
  * @version 1.0
@@ -53,15 +52,15 @@ public class CommandTree implements CommandExecutor, TabCompleter {
    * <pre>
    * new CommandTree.Builder("plugin.base", "Usage: /plugin command [args]")
    *                   .command("command subcommand", context -> {
-   *                      // Handle command logic
+   *                      // Handle command logic.
    *                      return true;
    *                   })
    *                   .playerCommand("player command", (player, context) -> {
-   *                      // Handle player-specific command logic
+   *                      // Handle player-specific command logic.
    *                      return true;
    *                   })
    *                   .tabCompleter("command subcommand", context -> {
-   *                      // Provide custom tab completion logic
+   *                      // Provide custom tab completion logic.
    *                      return List.of("option1", "option2");
    *                   })
    *                   .build();

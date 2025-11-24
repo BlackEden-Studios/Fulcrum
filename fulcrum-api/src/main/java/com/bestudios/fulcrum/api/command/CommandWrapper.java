@@ -1,6 +1,9 @@
 package com.bestudios.fulcrum.api.command;
 
-import com.bestudios.fulcrum.api.command.CommandTree.*;
+import com.bestudios.fulcrum.api.command.CommandTree.CommandAction;
+import com.bestudios.fulcrum.api.command.CommandTree.PlayerCommandAction;
+import com.bestudios.fulcrum.api.command.CommandTree.TabCompleteFunction;
+import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -9,7 +12,7 @@ import org.jetbrains.annotations.Nullable;
   *
  * @author Bestialus
  * @version 1.0
- * @since 1.0
+ * @since   1.0
  * @see CommandTree
  */
 public record CommandWrapper(
@@ -19,57 +22,6 @@ public record CommandWrapper(
         TabCompleteFunction tabCompleter,
         String permission
 ) {
-
-  /**
-   * Private constructor - use Builder pattern for instantiation
-   */
-  public CommandWrapper {
-  }
-
-  /**
-   * Gets the command path (e.g., "command subcommand")
-   */
-  @Override
-  @NotNull
-  public String commandPath() {
-    return commandPath;
-  }
-
-  /**
-   * Gets the general command action (for any CommandSender)
-   */
-  @Override
-  @Nullable
-  public CommandAction commandAction() {
-    return commandAction;
-  }
-
-  /**
-   * Gets the player-specific command action
-   */
-  @Override
-  @Nullable
-  public PlayerCommandAction playerCommandAction() {
-    return playerCommandAction;
-  }
-
-  /**
-   * Gets the tab completion function
-   */
-  @Override
-  @Nullable
-  public TabCompleteFunction tabCompleter() {
-    return tabCompleter;
-  }
-
-  /**
-   * Gets the permission required for this command
-   */
-  @Override
-  @Nullable
-  public String permission() {
-    return permission;
-  }
 
   /**
    * Checks if this wrapper has a player-specific command
@@ -82,11 +34,16 @@ public record CommandWrapper(
    * Builder class for creating CommandWrapper instances
    */
   public static class Builder {
-    private String commandPath;
-    private CommandAction commandAction;
-    private PlayerCommandAction playerCommandAction;
-    private TabCompleteFunction tabCompleter;
-    private String permission;
+    /** The command path */
+    private String builderCommandPath;
+    /** The action executed by performing this command path */
+    private CommandAction builderCommandAction;
+    /** The action executed by performing this command path on a player */
+    private PlayerCommandAction builderPlayerCommandAction;
+    /** The function used to provide tab completions */
+    private TabCompleteFunction builderTabCompleter;
+    /** The permission required to execute this command */
+    private String builderPermission;
 
     /**
      * Sets the command path (required)
@@ -94,10 +51,9 @@ public record CommandWrapper(
      * @param path The command path, e.g., "help" or "admin reload"
      */
     public Builder path(@NotNull String path) {
-      if (path.trim().isEmpty()) {
+      if (path.isBlank())
         throw new IllegalArgumentException("Command path cannot be null or empty");
-      }
-      this.commandPath = path;
+      this.builderCommandPath = path;
       return this;
     }
 
@@ -107,8 +63,7 @@ public record CommandWrapper(
      * @param action The action to execute for any CommandSender
      */
     public Builder action(@NotNull CommandAction action) {
-      this.playerCommandAction = null;
-      this.commandAction = action;
+      this.builderCommandAction = action;
       return this;
     }
 
@@ -118,8 +73,7 @@ public record CommandWrapper(
      * @param action The action to execute for Player senders only
      */
     public Builder playerAction(@NotNull PlayerCommandAction action) {
-      this.commandAction = null;
-      this.playerCommandAction = action;
+      this.builderPlayerCommandAction = action;
       return this;
     }
 
@@ -129,17 +83,17 @@ public record CommandWrapper(
      * @param completer The function to provide tab completions
      */
     public Builder tabCompleter(@Nullable TabCompleteFunction completer) {
-      this.tabCompleter = completer;
+      this.builderTabCompleter = completer;
       return this;
     }
 
     /**
      * Sets the permission required for this command
      *
-     * @param permission The permission string
+     * @param permissionChecked The permission string
      */
-    public Builder permission(@Nullable String permission) {
-      this.permission = permission;
+    public Builder permission(@Nullable String permissionChecked) {
+      this.builderPermission = permissionChecked;
       return this;
     }
 
@@ -147,15 +101,19 @@ public record CommandWrapper(
      * Builds the CommandWrapper instance
      */
     public CommandWrapper build() {
-      if (commandPath == null || commandPath.trim().isEmpty()) {
+      if (builderCommandPath == null || builderCommandPath.isBlank())
         throw new IllegalStateException("Command path must be set");
-      }
 
-      if (commandAction == null && playerCommandAction == null) {
+      boolean hasAction = builderCommandAction != null;
+      boolean hasPlayerAction = builderPlayerCommandAction != null;
+
+      if (hasAction && hasPlayerAction)
+        throw new IllegalStateException("Cannot set both builderCommandAction and builderPlayerCommandAction. Please choose one.");
+
+      if (!hasAction && !hasPlayerAction)
         throw new IllegalStateException("Either command action or player command action must be set");
-      }
 
-      return new CommandWrapper(commandPath, commandAction, playerCommandAction, tabCompleter, permission);
+      return new CommandWrapper(builderCommandPath, builderCommandAction, builderPlayerCommandAction, builderTabCompleter, builderPermission);
     }
   }
 }
