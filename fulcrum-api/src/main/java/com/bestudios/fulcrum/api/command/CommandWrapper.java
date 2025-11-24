@@ -3,7 +3,6 @@ package com.bestudios.fulcrum.api.command;
 import com.bestudios.fulcrum.api.command.CommandTree.CommandAction;
 import com.bestudios.fulcrum.api.command.CommandTree.PlayerCommandAction;
 import com.bestudios.fulcrum.api.command.CommandTree.TabCompleteFunction;
-import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -34,6 +33,7 @@ public record CommandWrapper(
    * Builder class for creating CommandWrapper instances
    */
   public static class Builder {
+
     /** The command path */
     private String builderCommandPath;
     /** The action executed by performing this command path */
@@ -108,12 +108,18 @@ public record CommandWrapper(
       boolean hasPlayerAction = builderPlayerCommandAction != null;
 
       if (hasAction && hasPlayerAction)
-        throw new IllegalStateException("Cannot set both builderCommandAction and builderPlayerCommandAction. Please choose one.");
+        throw new IllegalStateException("Cannot set both CommandAction and PlayerCommandAction. Please choose one.");
 
       if (!hasAction && !hasPlayerAction)
         throw new IllegalStateException("Either command action or player command action must be set");
 
-      return new CommandWrapper(builderCommandPath, builderCommandAction, builderPlayerCommandAction, builderTabCompleter, builderPermission);
+      return new CommandWrapper(
+              builderCommandPath,
+              builderCommandAction,
+              builderPlayerCommandAction,
+              builderTabCompleter,
+              builderPermission
+      );
     }
   }
 }
