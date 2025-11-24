@@ -8,7 +8,13 @@ import org.jetbrains.annotations.Nullable;
 
 /**
  * A wrapper class to encapsulate command metadata in a Minecraft plugin.
-  *
+ *
+ * @param commandPath The command path, e.g., "help" or "admin reload"
+ * @param commandAction The action to execute for any CommandSender
+ * @param playerCommandAction The action to execute for Player senders only
+ * @param tabCompleter The function to provide tab completions
+ * @param permission The permission required to execute this command
+ *
  * @author Bestialus
  * @version 1.0
  * @since   1.0

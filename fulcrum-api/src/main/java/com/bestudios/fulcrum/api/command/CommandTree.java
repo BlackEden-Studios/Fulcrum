@@ -15,6 +15,7 @@ import org.jetbrains.annotations.Nullable;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
@@ -32,6 +33,9 @@ import java.util.stream.Collectors;
  * @see CommandWrapper
  */
 public class CommandTree implements CommandExecutor, TabCompleter {
+  
+  /** The default locale for command tree messages */
+  private static final Locale DEFAULT_LOCALE = Locale.US;
 
   /** The root node of the command tree */
   private final CommandNode rootNode;
@@ -110,8 +114,8 @@ public class CommandTree implements CommandExecutor, TabCompleter {
      */
     public Builder command(String path, CommandAction action) {
       // Command path null check
-      if (path == null || path.trim().isEmpty()) {
-        throw new IllegalArgumentException("Command path cannot be null or empty");
+      if (path == null || path.isBlank()) {
+        throw new IllegalArgumentException("Command path cannot be null or blank");
       }
       // Command action null check
       if (action == null) {
@@ -131,11 +135,11 @@ public class CommandTree implements CommandExecutor, TabCompleter {
      */
     public Builder command(String path, CommandAction action, String permission) {
       // Command permission null check
-      if (permission == null || permission.trim().isEmpty()) {
+      if (permission == null || permission.isBlank()) {
         throw new IllegalArgumentException("Permission cannot be null or empty");
       }
       // Command path null check
-      if (path == null || path.trim().isEmpty()) {
+      if (path == null || path.isBlank()) {
         throw new IllegalArgumentException("Command path cannot be null or empty");
       }
       // Command action null check
@@ -272,7 +276,7 @@ public class CommandTree implements CommandExecutor, TabCompleter {
      */
     public CommandTree build() {
       // Validate that the base permission is set
-      if (wrapper.basePermission != null && wrapper.basePermission.trim().isEmpty()) {
+      if (wrapper.basePermission != null && wrapper.basePermission.isBlank()) {
         throw new IllegalStateException(
                 "Base permission cannot be null or empty"
         );
@@ -318,7 +322,7 @@ public class CommandTree implements CommandExecutor, TabCompleter {
    * @param sender        The command sender (e.g., player or console)
    * @param command       The command being executed (args + remainingArgs)
    * @param args          The arguments used in the command path (e.g., "arg1 arg2" in "root arg1 arg2")
-   * @param remainingArgs The remaining arguments after the command path (e.g., "subcommand" in "command arg1subcommand")
+   * @param remainingArgs The remaining arguments after the command path (e.g., "remaining" in "root args remaining")
    */
   public record CommandContext(
     CommandSender sender,
@@ -347,7 +351,7 @@ public class CommandTree implements CommandExecutor, TabCompleter {
     }
 
     /**
-     * Gets the argument at the specified index from the remaining arguments or returns a default value if out of bounds.
+     * Gets the argument at the specified index from the remaining arguments or returns a default value if OutOfBounds.
      *
      * @param index        the index of the argument to retrieve
      * @param defaultValue the default value to return if the index is out of bounds
@@ -401,29 +405,29 @@ public class CommandTree implements CommandExecutor, TabCompleter {
     /**
      * Indicates if this command node requires a player to execute its action
      */
-    private boolean requiresPlayer = false;
+    private boolean forPlayer;
 
     /**
      * Sets the action for this command node with an optional permission.
      * If the action is null, this node will not execute any action.
      *
-     * @param action     The action to execute when this command node is reached
-     * @param permission The permission required to execute this action, or null if no permission is required
+     * @param actionToSet       The action to execute when this command node is reached
+     * @param permissionToCheck The permission required to execute this action, or null if no permission is required
      */
-    public void setAction(CommandAction action, String permission) {
-      this.action = action;
-      this.permission = permission;
+    public void setAction(CommandAction actionToSet, String permissionToCheck) {
+      this.action = actionToSet;
+      this.permission = permissionToCheck;
     }
 
     /**
      * Sets the player-specific action for this command node with an optional permission.
      * If the action is null, this node will not execute any action.
      *
-     * @param playerAction The action to execute when this command node is reached by a player
-     * @param permission   The permission required to execute this action, or null if no permission is required
+     * @param playerAction      The action to execute when this command node is reached by a player
+     * @param permissionToCheck The permission required to execute this action, or null if no permission is required
      */
-    public void setPlayerAction(PlayerCommandAction playerAction, String permission) {
-      this.requiresPlayer = true;
+    public void setPlayerAction(PlayerCommandAction playerAction, String permissionToCheck) {
+      this.forPlayer = true;
       this.action = context -> {
         if (!context.isPlayer()) {
           context.sender().sendMessage("This command can only be used by players.");
@@ -431,7 +435,7 @@ public class CommandTree implements CommandExecutor, TabCompleter {
         }
         return playerAction.execute(context.getPlayer(), context);
       };
-      this.permission = permission;
+      this.permission = permissionToCheck;
     }
 
     /**
@@ -452,7 +456,7 @@ public class CommandTree implements CommandExecutor, TabCompleter {
      * @return The CommandNode for the specified child, or null if it does not exist
      */
     public CommandNode getChild(String name) {
-      return children.get(name.toLowerCase());
+      return children.get(name.toLowerCase(DEFAULT_LOCALE));
     }
 
     /**
@@ -463,7 +467,7 @@ public class CommandTree implements CommandExecutor, TabCompleter {
      * @return The CommandNode for the specified child
      */
     public CommandNode getOrCreateChild(String name) {
-      return children.computeIfAbsent(name.toLowerCase(), k -> new CommandNode());
+      return children.computeIfAbsent(name.toLowerCase(DEFAULT_LOCALE), k -> new CommandNode());
     }
 
     /**
@@ -540,7 +544,7 @@ public class CommandTree implements CommandExecutor, TabCompleter {
      * @return true if this command node requires a player, false otherwise
      */
     public boolean requiresPlayer() {
-      return requiresPlayer;
+      return forPlayer;
     }
   }
 
@@ -767,7 +771,8 @@ public class CommandTree implements CommandExecutor, TabCompleter {
    */
   public static List<String> filterCompletions(List<String> possibilities, String partial) {
     return possibilities.stream()
-                        .filter(s -> s.toLowerCase().startsWith(partial.toLowerCase()))
+                        .filter(s -> s.toLowerCase(DEFAULT_LOCALE)
+                                              .startsWith(partial.toLowerCase(DEFAULT_LOCALE)))
                         .collect(Collectors.toList());
   }
 
@@ -788,7 +793,8 @@ public class CommandTree implements CommandExecutor, TabCompleter {
 
       return Bukkit.getOnlinePlayers().stream()
                                       .map(Player::getName)
-                                      .filter(name -> name.toLowerCase().startsWith(partial.toLowerCase()))
+                                      .filter(name -> name.toLowerCase(DEFAULT_LOCALE)
+                                                                  .startsWith(partial.toLowerCase(DEFAULT_LOCALE)))
                                       .collect(Collectors.toList());
     }
     return List.of();
@@ -826,7 +832,11 @@ public class CommandTree implements CommandExecutor, TabCompleter {
    * @param playerArgIndex The index of the argument (starting at 1)
    * @return A CompletableFuture containing the OfflinePlayer or null
    */
-  public static CompletableFuture<OfflinePlayer> getTargetOfflinePlayerAsync(CommandContext context, int playerArgIndex, boolean implicitSender) {
+  public static CompletableFuture<OfflinePlayer> getTargetOfflinePlayerAsync(
+          CommandContext context,
+          int playerArgIndex, 
+          boolean implicitSender
+  ) {
     // 1. Check if the user provided a specific argument
     if (context.remainingArgs().length >= playerArgIndex)
       // Run the lookup on a separate thread to avoid blocking the main server tick
