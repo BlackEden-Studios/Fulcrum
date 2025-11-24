@@ -113,16 +113,7 @@ public class CommandTree implements CommandExecutor, TabCompleter {
      * @return this Builder instance for chaining
      */
     public Builder command(String path, CommandAction action) {
-      // Command path null check
-      if (path == null || path.isBlank()) {
-        throw new IllegalArgumentException("Command path cannot be null or blank");
-      }
-      // Command action null check
-      if (action == null) {
-        throw new IllegalArgumentException("Command action cannot be null");
-      }
-      wrapper.registerCommand(path, action);
-      return this;
+      return command(path, action, null);
     }
 
     /**
@@ -134,18 +125,15 @@ public class CommandTree implements CommandExecutor, TabCompleter {
      * @return this Builder instance for chaining
      */
     public Builder command(String path, CommandAction action, String permission) {
-      // Command permission null check
-      if (permission == null || permission.isBlank()) {
-        throw new IllegalArgumentException("Permission cannot be null or empty");
-      }
-      // Command path null check
-      if (path == null || path.isBlank()) {
+      if (permission != null && permission.isBlank())
+        throw new IllegalArgumentException("Command permission should be explicitly set to null or a non-empty string");
+      // Path null check
+      if (path == null || path.isBlank())
         throw new IllegalArgumentException("Command path cannot be null or empty");
-      }
-      // Command action null check
-      if (action == null) {
+      // Action null check
+      if (action == null)
         throw new IllegalArgumentException("Command action cannot be null");
-      }
+      // Add the command to the root node
       wrapper.registerCommand(path, action, permission);
       return this;
     }
@@ -157,13 +145,7 @@ public class CommandTree implements CommandExecutor, TabCompleter {
      * @return this Builder instance for chaining
      */
     public Builder commands(Map<String, CommandAction> commands) {
-      if (commands == null || commands.isEmpty()) {
-        return this; // No commands to register
-      }
-      for (Map.Entry<String, CommandAction> entry : commands.entrySet()) {
-        wrapper.registerCommand(entry.getKey(), entry.getValue());
-      }
-      return this;
+      return commands(commands, null);
     }
 
     /**
@@ -191,8 +173,7 @@ public class CommandTree implements CommandExecutor, TabCompleter {
      * @return this Builder instance for chaining
      */
     public Builder playerCommand(String path, PlayerCommandAction action) {
-      wrapper.registerPlayerCommand(path, action);
-      return this;
+      return playerCommand(path, action, null);
     }
 
     /**
@@ -215,13 +196,7 @@ public class CommandTree implements CommandExecutor, TabCompleter {
      * @return this Builder instance for chaining
      */
     public Builder playerCommands(Map<String, PlayerCommandAction> commands) {
-      if (commands == null || commands.isEmpty()) {
-        return this; // No commands to register
-      }
-      for (Map.Entry<String, PlayerCommandAction> entry : commands.entrySet()) {
-        wrapper.registerPlayerCommand(entry.getKey(), entry.getValue());
-      }
-      return this;
+      return playerCommands(commands, null);
     }
 
     /**
@@ -276,17 +251,12 @@ public class CommandTree implements CommandExecutor, TabCompleter {
      */
     public CommandTree build() {
       // Validate that the base permission is set
-      if (wrapper.basePermission != null && wrapper.basePermission.isBlank()) {
-        throw new IllegalStateException(
-                "Base permission cannot be null or empty"
-        );
-      }
+      if (wrapper.basePermission != null && wrapper.basePermission.isBlank())
+        throw new IllegalStateException("Base permission cannot be blank or empty");
       // Validate that at least one command is registered
-      if (wrapper.rootNode.children.isEmpty()) {
-        throw new IllegalStateException(
-                "CommandTree must have at least one registered command"
-        );
-      }
+      if (wrapper.rootNode.children.isEmpty())
+        throw new IllegalStateException("CommandTree must have at least one registered command");
+      // Return the CommandTree instance
       return wrapper;
     }
   }
@@ -834,7 +804,7 @@ public class CommandTree implements CommandExecutor, TabCompleter {
    */
   public static CompletableFuture<OfflinePlayer> getTargetOfflinePlayerAsync(
           CommandContext context,
-          int playerArgIndex, 
+          int playerArgIndex,
           boolean implicitSender
   ) {
     // 1. Check if the user provided a specific argument
