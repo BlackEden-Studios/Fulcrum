@@ -51,8 +51,6 @@ public record CommandWrapper(
      * @param path The command path, e.g., "help" or "admin reload"
      */
     public Builder path(@NotNull String path) {
-      if (path.isBlank())
-        throw new IllegalArgumentException("Command path cannot be null or empty");
       this.builderCommandPath = path;
       return this;
     }
@@ -102,16 +100,10 @@ public record CommandWrapper(
      */
     public CommandWrapper build() {
       if (builderCommandPath == null || builderCommandPath.isBlank())
-        throw new IllegalStateException("Command path must be set");
+        throw new IllegalStateException("Command path must be properly set ");
 
-      boolean hasAction = builderCommandAction != null;
-      boolean hasPlayerAction = builderPlayerCommandAction != null;
-
-      if (hasAction && hasPlayerAction)
-        throw new IllegalStateException("Cannot set both CommandAction and PlayerCommandAction. Please choose one.");
-
-      if (!hasAction && !hasPlayerAction)
-        throw new IllegalStateException("Either command action or player command action must be set");
+      if (builderCommandAction != null ^ builderPlayerCommandAction != null)
+        throw new IllegalStateException("Only one of the command actions should be set");
 
       return new CommandWrapper(
               builderCommandPath,
