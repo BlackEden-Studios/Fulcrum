@@ -3,15 +3,16 @@ package com.bestudios.fulcrum.api.command;
 import com.bestudios.fulcrum.api.command.CommandTree.CommandAction;
 import com.bestudios.fulcrum.api.command.CommandTree.PlayerCommandAction;
 import com.bestudios.fulcrum.api.command.CommandTree.TabCompleteFunction;
+import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 /**
  * A wrapper class to encapsulate command metadata in a Minecraft plugin.
  *
- * @param commandPath The command path, e.g., "help" or "admin reload"
- * @param commandAction The action to execute for any CommandSender
- * @param playerCommandAction The action to execute for Player senders only
+ * @param path The command path, e.g., "help" or "admin reload"
+ * @param action The action to execute for any CommandSender
+ * @param playerAction The action to execute for Player senders only
  * @param tabCompleter The function to provide tab completions
  * @param permission The permission required to execute this command
  *
@@ -21,9 +22,9 @@ import org.jetbrains.annotations.Nullable;
  * @see CommandTree
  */
 public record CommandWrapper(
-        String commandPath,
-        CommandAction commandAction,
-        PlayerCommandAction playerCommandAction,
+        @NotNull String path,
+        CommandAction action,
+        PlayerCommandAction playerAction,
         TabCompleteFunction tabCompleter,
         String permission
 ) {
@@ -31,8 +32,9 @@ public record CommandWrapper(
   /**
    * Checks if this wrapper has a player-specific command
    */
+  @Contract(pure = true)
   public boolean isPlayerCommand() {
-    return playerCommandAction != null;
+    return playerAction != null;
   }
 
   /**
