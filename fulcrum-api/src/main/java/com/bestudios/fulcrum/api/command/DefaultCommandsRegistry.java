@@ -2,7 +2,6 @@ package com.bestudios.fulcrum.api.command;
 
 import org.bukkit.command.PluginCommand;
 import org.bukkit.plugin.java.JavaPlugin;
-import org.checkerframework.checker.units.qual.N;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -112,15 +111,15 @@ public class DefaultCommandsRegistry implements CommandsRegistry<CommandTree, Co
       PluginCommand pluginCommand = plugin.getCommand(commandName);
       // If the command is null, the command was not found in plugin.yml
       if (pluginCommand == null)
-        throw new Exception("Command '" + commandName + "' not found in plugin.yml");
+        throw new NullPointerException("Command '" + commandName + "' not found in plugin.yml");
 
       pluginCommand.setExecutor(command);
       pluginCommand.setTabCompleter(command);
       return true;
 
     } catch (Exception e) {
-      plugin.getLogger().severe("Failed to register command '" + commandName + "': " + e.getMessage() + "\n" +
-                                Arrays.toString(e.getStackTrace()));
+      plugin.getLogger().severe("Failed to register command '" + commandName + "': " + e.getMessage() +
+                                "\n" + Arrays.toString(e.getStackTrace()));
       commandsMap.remove(commandName); // Rollback on error
       return false;
     }

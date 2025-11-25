@@ -251,7 +251,8 @@ public class CommandTree implements CommandExecutor, TabCompleter {
       }
 
       // Try to find the child
-      CommandNode child = createNewNodeIfNull ? state.currentNode.getOrCreateChild(arg) : state.currentNode.getChild(arg);
+      CommandNode child = createNewNodeIfNull ? state.currentNode.getOrCreateChild(arg) :
+                                                state.currentNode.getChild(arg);
 
       if (child != null) {
         // If child found: it becomes the current node for the next iteration
@@ -339,8 +340,6 @@ public class CommandTree implements CommandExecutor, TabCompleter {
     private TabCompleteFunction tabCompleter;
     /** The permission required to execute this command node's action */
     private String permission;
-    /** Indicates if this command node requires a player to execute its action */
-    private boolean forPlayer;
 
     /**
      * Gets the child command node with the specified name.
@@ -408,7 +407,6 @@ public class CommandTree implements CommandExecutor, TabCompleter {
      */
     @Contract(mutates = "this")
     private void setPlayerAction(PlayerCommandAction playerAction, String permissionToCheck) {
-      this.forPlayer = true;
       this.action = context -> {
         if (!context.isPlayer()) {
           context.sender().sendMessage("This command can only be used by players.");
@@ -461,17 +459,6 @@ public class CommandTree implements CommandExecutor, TabCompleter {
     @Contract(pure = true)
     private String getPermission() {
       return permission != null ? permission : "";
-    }
-
-    /**
-     * Checks if this command node requires a player to execute its action.
-     * This is used to determine if the command can be executed by non-player senders (e.g., console).
-     *
-     * @return true if this command node requires a player, false otherwise
-     */
-    @Contract(pure = true)
-    private boolean requiresPlayer() {
-      return forPlayer;
     }
 
     /**
