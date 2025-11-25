@@ -22,15 +22,15 @@ import java.util.concurrent.ConcurrentHashMap;
  *
  * @author Bestialus
  * @version 1.0
- * @since 1.0
+ * @since   1.0
  * @see SessionCache
  */
 public class SmartCache<T> {
 
-  /**
-   * Default error message for null player IDs.
-   */
+  /** Default error message for null player IDs */
   protected static final String NULL_ID_ERROR = Utils.messageRequireNonNull("player ID");
+  /** Default capacity buffer for the cache size */
+  protected static final int DEFAULT_CAPACITY_BUFFER = 20;
 
   /** The cache implemented as a map */
   protected final ConcurrentHashMap<UUID, T> cache;
@@ -41,25 +41,26 @@ public class SmartCache<T> {
    * Creates a new SmartCache with a specified maximum number of entries.
    *
    * @param maxEntries The maximum number of entries expected in the cache
-   * @param plugin The plugin instance
+   * @param pluginReference The plugin instance
    */
-  public SmartCache(int maxEntries, @NotNull Plugin plugin) {
-    this.cache = new ConcurrentHashMap<>(maxEntries);
-    this.plugin = Objects.requireNonNull(plugin, Utils.messageRequireNonNull("plugin"));
-    SmartCacheListener listener = new SmartCacheListener();
+  public SmartCache(int maxEntries, @NotNull Plugin pluginReference) {
+    this.cache = new ConcurrentHashMap<>(maxEntries + DEFAULT_CAPACITY_BUFFER);
+    this.plugin = Objects.requireNonNull(pluginReference, Utils.messageRequireNonNull("plugin"));
 
-    plugin.getServer().getPluginManager().registerEvents(listener, plugin);
-    plugin.getLogger().config("Registered " + this.getClass().getSimpleName() +
-                              " with capacity for " + maxEntries + " entries");
+    // Register listener for player disconnect events
+    SmartCacheListener listener = new SmartCacheListener();
+    this.plugin.getServer().getPluginManager().registerEvents(listener, pluginReference);
+    this.plugin.getLogger().config("Registered " + this.getClass().getSimpleName() +
+                                   " with capacity for " + maxEntries + " entries");
   }
 
   /**
    * Creates a new SmartCache sized to match the server's configured maximum player count.
    *
-   * @param plugin The plugin instance
+   * @param pluginReference The plugin instance
    */
-  public SmartCache(@NotNull Plugin plugin) {
-    this(plugin.getServer().getMaxPlayers(), plugin);
+  public SmartCache(@NotNull Plugin pluginReference) {
+    this(pluginReference.getServer().getMaxPlayers(), pluginReference);
   }
 
   /**
@@ -161,11 +162,14 @@ public class SmartCache<T> {
     @EventHandler(priority = EventPriority.MONITOR)
     public void onPlayerQuit(PlayerQuitEvent event) {
       UUID playerID = event.getPlayer().getUniqueId();
-      if (cache.containsKey(playerID)) {
-        plugin.getLogger().config("Saving data for player: " + playerID);
-        savePlayerData(playerID);
-        remove(playerID);
-      }
+
+      // Avoid saving data if the player was not in the cache
+      if (!cache.containsKey(playerID)) return;
+
+      // Save data and remove from the cache
+      plugin.getLogger().config("Saving data for player: " + playerID);
+      savePlayerData(playerID);
+      remove(playerID);
     }
   }
 }
