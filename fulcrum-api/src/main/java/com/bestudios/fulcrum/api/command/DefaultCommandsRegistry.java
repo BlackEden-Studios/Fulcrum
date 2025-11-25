@@ -110,8 +110,7 @@ public class DefaultCommandsRegistry implements CommandsRegistry<CommandTree, Co
       // Get the Bukkit command
       PluginCommand pluginCommand = plugin.getCommand(commandName);
       // If the command is null, the command was not found in plugin.yml
-      if (pluginCommand == null)
-        throw new NullPointerException("Command '" + commandName + "' not found in plugin.yml");
+      Objects.requireNonNull(pluginCommand,"Command '" + commandName + "' not found in plugin.yml");
 
       pluginCommand.setExecutor(command);
       pluginCommand.setTabCompleter(command);
