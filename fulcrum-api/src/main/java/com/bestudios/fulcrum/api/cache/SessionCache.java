@@ -21,47 +21,46 @@ import java.util.UUID;
  * @version 1.0
  * @since   1.0
  * @see SmartCache
+ * @see PlayerDataLoader
+ * @see PlayerDataSaver
  */
 public class SessionCache<T> extends SmartCache<T> {
-  /**
-   * The PlayerDataLoader responsible for loading and creating player data.
-   */
+  /** The PlayerDataLoader responsible for loading and creating player data */
   private final PlayerDataLoader<T> dataLoader;
 
   /**
    * Creates a new SessionCache with the specified capacity and data loader.
    *
    * @param maxEntries The maximum number of entries expected
-   * @param plugin The plugin instance
-   * @param dataLoader The loader responsible for creating/retrieving player data
+   * @param pluginRef The plugin instance
+   * @param dataLoaderRef The loader responsible for creating/retrieving player data
    */
-  public SessionCache(int maxEntries, @NotNull Plugin plugin, @NotNull PlayerDataLoader<T> dataLoader) {
-    super(maxEntries, plugin);
-    this.dataLoader = Objects.requireNonNull(dataLoader, Utils.messageRequireNonNull("data loader"));
-    SessionCacheListener sessionListener = new SessionCacheListener();
+  public SessionCache(
+          int maxEntries,
+          @NotNull Plugin pluginRef,
+          @NotNull PlayerDataSaver<T>  dataSaverRef,
+          @NotNull PlayerDataLoader<T> dataLoaderRef
+  ) {
+    super(maxEntries, pluginRef, dataSaverRef);
+    dataLoader = Objects.requireNonNull(dataLoaderRef, Utils.messageRequireNonNull("data loader"));
 
-    plugin.getServer().getPluginManager().registerEvents(sessionListener, plugin);
+    // Register listener for player join events
+    SessionCacheListener sessionListener = new SessionCacheListener();
+    this.plugin.getServer().getPluginManager().registerEvents(sessionListener, this.plugin);
   }
 
   /**
    * Creates a new SessionCache sized for maximum server capacity.
    *
-   * @param plugin The plugin instance
-   * @param dataLoader The loader responsible for creating/retrieving player data
+   * @param pluginRef The pluginRef instance
+   * @param dataLoaderRef The loader responsible for creating/retrieving player data
    */
-  public SessionCache(@NotNull Plugin plugin, @NotNull PlayerDataLoader<T> dataLoader) {
-    this(plugin.getServer().getMaxPlayers(), plugin, dataLoader);
-  }
-
-  /**
-   * Loads player data from persistent storage or creates new default data.
-   * This method uses the configured PlayerDataLoader.
-   *
-   * @param playerID The UUID of the player
-   * @return The loaded or newly created player data
-   */
-  protected T loadPlayerData(@NotNull UUID playerID) {
-    return dataLoader.load(playerID);
+  public SessionCache(
+          @NotNull Plugin pluginRef,
+          @NotNull PlayerDataSaver<T> dataSaverRef,
+          @NotNull PlayerDataLoader<T> dataLoaderRef
+  ) {
+    this(pluginRef.getServer().getMaxPlayers(), pluginRef, dataSaverRef, dataLoaderRef);
   }
 
   /**
@@ -73,11 +72,13 @@ public class SessionCache<T> extends SmartCache<T> {
       UUID playerID = event.getPlayer().getUniqueId();
 
       // Avoid reloading if already cached (e.g., from plugin reload)
-      if (!cache.containsKey(playerID)) {
-        plugin.getLogger().fine("Loading data for player: " + playerID);
-        T data = loadPlayerData(playerID);
-        cache.put(playerID, data);
-      }
+      if ( cache.containsKey(playerID)) return;
+
+      // Load and cache player data
+      plugin.getLogger().fine("Loading data for player: " + playerID);
+      T data = dataLoader.load(playerID);
+      cache.put(playerID, data);
+
     }
   }
 }

@@ -10,8 +10,9 @@ import java.util.UUID;
  *
  * @author Bestialus
  * @version 1.0
- * @since 1.0
+ * @since   1.0
  * @see SessionCache
+ * @see PlayerDataSaver
  */
 @FunctionalInterface
 public interface PlayerDataLoader<T> {

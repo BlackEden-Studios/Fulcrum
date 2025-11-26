@@ -195,7 +195,7 @@ public class DefaultCommandsRegistry implements CommandsRegistry<CommandTree, Co
   /**
    * Logs a warning message indicating that the given command name is empty.
    * @param commandName The name of the command that is empty.
-   * @param type        The type of the empty value (e.g. command name, subcommand map).
+   * @param type        The type of the empty value (e.g., command name, subcommand map).
    */
   private void sendWarningForEmpty(String commandName, String type) {
     plugin.getLogger().warning("Cannot register command '" + commandName + "': " + type + " is empty");

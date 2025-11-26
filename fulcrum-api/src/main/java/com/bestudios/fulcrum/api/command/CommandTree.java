@@ -766,8 +766,8 @@ public class CommandTree implements CommandExecutor, TabCompleter {
    * Asynchronously retrieves a target OfflinePlayer.
    * <p>
    * Priority:
-   * 1. If an argument exists at the index, lookup that player (Async).
-   * 2. If no argument exists and sender is a player, return sender (Sync).
+   * 1. If an argument exists at the index, look up that player (Async).
+   * 2. If no argument exists and the sender is a player, return sender (Sync).
    * 3. Otherwise, return null.
    *
    * @param context        The command context
