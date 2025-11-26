@@ -1,0 +1,2 @@
+# Fulcrum
+[![Codacy Badge](https://api.codacy.com/project/badge/Grade/a8672b0b92354badb88bbc7904487512)](https://app.codacy.com/gh/BlackEden-Studios/Fulcrum?utm_source=github.com&utm_medium=referral&utm_content=BlackEden-Studios/Fulcrum&utm_campaign=Badge_Grade)
