@@ -24,6 +24,7 @@ import java.util.concurrent.ConcurrentHashMap;
  * @version 1.0
  * @since   1.0
  * @see SessionCache
+ * @see PlayerDataSaver
  */
 public class SmartCache<T> {
 
@@ -36,20 +37,27 @@ public class SmartCache<T> {
   protected final ConcurrentHashMap<UUID, T> cache;
   /** The plugin instance */
   protected final Plugin plugin;
+  /** The player data saver */
+  protected final PlayerDataSaver<T> dataSaver;
 
   /**
    * Creates a new SmartCache with a specified maximum number of entries.
    *
    * @param maxEntries The maximum number of entries expected in the cache
-   * @param pluginReference The plugin instance
+   * @param pluginRef  The plugin instance
    */
-  public SmartCache(int maxEntries, @NotNull Plugin pluginReference) {
+  public SmartCache(
+          int maxEntries,
+          @NotNull Plugin pluginRef,
+          @NotNull PlayerDataSaver<T> dataSaverRef
+  ) {
     this.cache = new ConcurrentHashMap<>(maxEntries + DEFAULT_CAPACITY_BUFFER);
-    this.plugin = Objects.requireNonNull(pluginReference, Utils.messageRequireNonNull("plugin"));
+    this.plugin = Objects.requireNonNull(pluginRef, Utils.messageRequireNonNull("plugin"));
+    this.dataSaver = Objects.requireNonNull(dataSaverRef, Utils.messageRequireNonNull("data saver"));
 
     // Register listener for player disconnect events
     SmartCacheListener listener = new SmartCacheListener();
-    this.plugin.getServer().getPluginManager().registerEvents(listener, pluginReference);
+    this.plugin.getServer().getPluginManager().registerEvents(listener, pluginRef);
     this.plugin.getLogger().config("Registered " + this.getClass().getSimpleName() +
                                    " with capacity for " + maxEntries + " entries");
   }
@@ -59,8 +67,8 @@ public class SmartCache<T> {
    *
    * @param pluginReference The plugin instance
    */
-  public SmartCache(@NotNull Plugin pluginReference) {
-    this(pluginReference.getServer().getMaxPlayers(), pluginReference);
+  public SmartCache(@NotNull Plugin pluginReference, @NotNull PlayerDataSaver<T> dataSaverRef) {
+    this(pluginReference.getServer().getMaxPlayers(), pluginReference, dataSaverRef);
   }
 
   /**
@@ -138,21 +146,11 @@ public class SmartCache<T> {
   }
 
   /**
-   * Saves the data for a specific player to persistent storage.
-   * Override this method to implement actual persistence logic.
-   *
-   * @param playerID The UUID of the player
-   */
-  protected void savePlayerData(@NotNull UUID playerID) {
-    // Override in subclasses for actual persistence
-  }
-
-  /**
    * Saves all cached data to persistent storage.
    * Override this method to implement batch save logic.
    */
   public void saveAllData() {
-    cache.keySet().forEach(this::savePlayerData);
+    cache.keySet().forEach(dataSaver::save);
   }
 
   /**
@@ -168,7 +166,7 @@ public class SmartCache<T> {
 
       // Save data and remove from the cache
       plugin.getLogger().config("Saving data for player: " + playerID);
-      savePlayerData(playerID);
+      dataSaver.save(playerID);
       remove(playerID);
     }
   }

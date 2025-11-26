@@ -21,6 +21,8 @@ import java.util.UUID;
  * @version 1.0
  * @since   1.0
  * @see SmartCache
+ * @see PlayerDataLoader
+ * @see PlayerDataSaver
  */
 public class SessionCache<T> extends SmartCache<T> {
   /** The PlayerDataLoader responsible for loading and creating player data */
@@ -33,8 +35,13 @@ public class SessionCache<T> extends SmartCache<T> {
    * @param pluginRef The plugin instance
    * @param dataLoaderRef The loader responsible for creating/retrieving player data
    */
-  public SessionCache(int maxEntries, @NotNull Plugin pluginRef, @NotNull PlayerDataLoader<T> dataLoaderRef) {
-    super(maxEntries, pluginRef);
+  public SessionCache(
+          int maxEntries,
+          @NotNull Plugin pluginRef,
+          @NotNull PlayerDataSaver<T>  dataSaverRef,
+          @NotNull PlayerDataLoader<T> dataLoaderRef
+  ) {
+    super(maxEntries, pluginRef, dataSaverRef);
     dataLoader = Objects.requireNonNull(dataLoaderRef, Utils.messageRequireNonNull("data loader"));
 
     // Register listener for player join events
@@ -48,19 +55,12 @@ public class SessionCache<T> extends SmartCache<T> {
    * @param pluginRef The pluginRef instance
    * @param dataLoaderRef The loader responsible for creating/retrieving player data
    */
-  public SessionCache(@NotNull Plugin pluginRef, @NotNull PlayerDataLoader<T> dataLoaderRef) {
-    this(pluginRef.getServer().getMaxPlayers(), pluginRef, dataLoaderRef);
-  }
-
-  /**
-   * Loads player data from persistent storage or creates new default data.
-   * This method uses the configured PlayerDataLoader.
-   *
-   * @param playerID The UUID of the player
-   * @return The loaded or newly created player data
-   */
-  protected T loadPlayerData(@NotNull UUID playerID) {
-    return dataLoader.load(playerID);
+  public SessionCache(
+          @NotNull Plugin pluginRef,
+          @NotNull PlayerDataSaver<T> dataSaverRef,
+          @NotNull PlayerDataLoader<T> dataLoaderRef
+  ) {
+    this(pluginRef.getServer().getMaxPlayers(), pluginRef, dataSaverRef, dataLoaderRef);
   }
 
   /**
@@ -76,7 +76,7 @@ public class SessionCache<T> extends SmartCache<T> {
 
       // Load and cache player data
       plugin.getLogger().fine("Loading data for player: " + playerID);
-      T data = loadPlayerData(playerID);
+      T data = dataLoader.load(playerID);
       cache.put(playerID, data);
 
     }

@@ -1,6 +1,7 @@
 package com.bestudios.fulcrum.service;
 
 import com.bestudios.fulcrum.api.cache.PlayerDataLoader;
+import com.bestudios.fulcrum.api.cache.PlayerDataSaver;
 import com.bestudios.fulcrum.api.cache.SessionCache;
 import com.bestudios.fulcrum.api.service.claim.ClaimsService;
 import com.bestudios.fulcrum.api.service.team.TeamsService;
@@ -68,7 +69,7 @@ public class LandsBridge implements ClaimsService, TeamsService {
     if (this.world == null)
       throw new IllegalStateException("Lands is not enabled for world 'world'");
     // Initialize the land cache
-    this.landCache = new SessionCache<>(plugin.getServer().getMaxPlayers(), plugin, new LandDataLoader());
+    this.landCache = new SessionCache<>(plugin, new LandDataSaver(), new LandDataLoader());
     // Register event listeners to keep the cache updated
     plugin.getServer().getPluginManager().registerEvents(new CacheListener(), plugin);
   }
@@ -185,11 +186,21 @@ public class LandsBridge implements ClaimsService, TeamsService {
     @Override
     public Land load(UUID playerID) {
       LandPlayer landPlayer = api.getLandPlayer(playerID);
-      if (landPlayer.getLands().isEmpty())
-        return null;
-      else
-        // For simplicity, return the first land the player owns
-        return landPlayer.getLands().iterator().next();
+      if (landPlayer.getLands().isEmpty()) return null;
+      // For simplicity, return the first land the player owns
+      return landPlayer.getLands().iterator().next();
+    }
+  }
+
+  /**
+  * Data saver for player land data.
+  * Does nothing.
+  */
+  private final class LandDataSaver implements PlayerDataSaver<Land> {
+
+    @Override
+    public boolean save(UUID playerID) {
+      return false;
     }
   }
 
