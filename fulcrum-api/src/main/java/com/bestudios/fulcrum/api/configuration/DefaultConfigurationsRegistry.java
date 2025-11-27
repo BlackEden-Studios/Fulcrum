@@ -1,27 +1,27 @@
 package com.bestudios.fulcrum.api.configuration;
 
+import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Default implementation of {@link ConfigurationsRegistry} that manages
  * {@link DefaultConfigurationHolder} instances in a thread-safe manner.
- *
- * <p>This registry allows the plugin to register and retrieve multiple configurations safely
+ * <p>
+ * This registry allows the plugin to register and retrieve multiple configurations safely
  * in a multithreaded environment. While the interface accepts any
  * {@link ConfigurationHolder} implementation, this default implementation
  * restricts registration to {@link DefaultConfigurationHolder} instances only.
- *
- * <p>Example usage:
+ * <p>
+ * Example usage:
  * <pre>{@code
  * ConfigurationsRegistry registry = new DefaultConfigurationsRegistry();
- * DefaultConfigurationHolder holder = new DefaultConfigurationHolder.Builder(plugin)
- *     .setFileName("config.yml")
- *     .setDataFolder(plugin.getDataFolder())
- *     .build();
+ * DefaultConfigurationHolder holder = new DefaultConfigurationHolder();
  *
  * registry.register("main-config", holder);
  * DefaultConfigurationHolder retrieved = registry.getHolder("main-config");
@@ -29,21 +29,16 @@ import java.util.concurrent.ConcurrentHashMap;
  *
  * @author Bestialus
  * @version 1.0
- * @since 1.0
+ * @since   1.0
  * @see ConfigurationsRegistry
  * @see DefaultConfigurationHolder
  */
-public class DefaultConfigurationsRegistry implements ConfigurationsRegistry {
+public class DefaultConfigurationsRegistry implements ConfigurationsRegistry<YamlConfiguration> {
 
-  /**
-   * Internal thread-safe map storing registered configuration holders.
-   * Keys are configuration names, values are the holder instances.
-   */
-  private final Map<String, DefaultConfigurationHolder> configs = new ConcurrentHashMap<>();
+  /** Internal thread-safe map storing registered configuration holders. */
+  private final Map<String, ConfigurationHolder<YamlConfiguration>> configs = new ConcurrentHashMap<>();
 
-  /**
-   * The plugin instance
-   */
+  /** The plugin instance */
   private final JavaPlugin plugin;
 
   /**
@@ -57,34 +52,38 @@ public class DefaultConfigurationsRegistry implements ConfigurationsRegistry {
 
   /**
    * Registers a configuration holder with the specified name.
-   *
-   * <p>This implementation only accepts {@link DefaultConfigurationHolder} instances.
+   * <p>
+   * This implementation only accepts {@link DefaultConfigurationHolder} instances.
+   * <p>
    * If a holder with the same name already exists, it will be replaced.
    *
-   * @param name the unique identifier for this configuration holder; must not be null
-   * @param holder the configuration holder to register, must be an instance of {@link DefaultConfigurationHolder}
-   * @throws IllegalArgumentException if the holder is not an instance of {@link DefaultConfigurationHolder}
-   * @throws NullPointerException if name or holder is null
+   * @param name   the unique identifier for this configuration holder
+   * @param holder the configuration holder to register
+   * @throws IllegalArgumentException if name parameter is blank
+   * @throws NullPointerException     if name or holder are null
    */
   @Override
-  public void register(String name, @NotNull ConfigurationHolder<?> holder) {
-    if (!(holder instanceof DefaultConfigurationHolder)) {
-      throw new IllegalArgumentException("Holder must be an instance of DefaultConfigurationHolder");
-    }
-    this.configs.put(name, (DefaultConfigurationHolder) holder);
+  public void register(@NotNull String name, @NotNull ConfigurationHolder<YamlConfiguration> holder) {
+    // Validate
+    Objects.requireNonNull(name, "Configuration name cannot be null");
+    Objects.requireNonNull(holder, "Configuration holder cannot be null");
+    if (name.isBlank()) throw new IllegalArgumentException("Configuration name cannot be blank");
+
+    // Register
+    this.configs.put(name, holder);
     this.plugin.getLogger().info("Registered configuration holder '" + name + "'");
   }
 
   /**
    * Unregisters the configuration holder associated with the specified name.
-   *
-   * <p>If no holder is registered with the given name, this method does nothing.
+   * <p>
+   * If no holder is registered with the given name, this method does nothing.
    *
    * @param name the unique identifier of the configuration holder to remove
    */
   @Override
-  public void unregister(String name) {
-    if (!this.configs.containsKey(name)) return;
+  public void unregister(@NotNull String name) {
+    Objects.requireNonNull(name, "Configuration name cannot be null");
     this.configs.remove(name);
     plugin.getLogger().info("Unregistered configuration holder '" + name + "'");
   }
@@ -97,7 +96,8 @@ public class DefaultConfigurationsRegistry implements ConfigurationsRegistry {
    *         {@code false} otherwise
    */
   @Override
-  public boolean isRegistered(String name) {
+  public boolean isRegistered(@NotNull String name) {
+    Objects.requireNonNull(name, "Configuration name cannot be null");
     return configs.containsKey(name);
   }
 
@@ -106,10 +106,11 @@ public class DefaultConfigurationsRegistry implements ConfigurationsRegistry {
    *
    * @param name the unique identifier of the configuration holder to retrieve
    * @return the {@link DefaultConfigurationHolder} associated with the given name,
-   *         or {@code null} if no holder is registered with that name
+   * or {@code null} if no holder is registered with that name
    */
-  @Override
-  public @NotNull DefaultConfigurationHolder getHolder(String name) {
+  @Override @Nullable
+  public ConfigurationHolder<YamlConfiguration> getHolder(@NotNull String name) {
+    Objects.requireNonNull(name, "Configuration name cannot be null");
     return configs.get(name);
   }
 }

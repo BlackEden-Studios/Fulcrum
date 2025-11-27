@@ -1,9 +1,11 @@
 package com.bestudios.fulcrum.api.configuration;
 
 import org.bukkit.configuration.file.FileConfiguration;
+import org.bukkit.configuration.file.YamlConfiguration;
 import org.jetbrains.annotations.Nullable;
 
 import java.io.File;
+import java.util.stream.Stream;
 
 /**
  * Represents a general-purpose holder interface for configuration management in Fulcrum plugins.
@@ -11,26 +13,15 @@ import java.io.File;
  * Implementations of this interface abstract access to file-based configurations loaded
  * using Bukkit’s {@link FileConfiguration} system. This provides consistent access to
  * reading, reloading, and saving configuration data for plugins.
- * </p>
  *
- * <p>
- * Example usage inside plugins:
- * <pre>{@code
- * ConfigurationHolder<YamlConfiguration> holder = new DefaultConfigurationHolder.Builder(plugin)
- *     .setDataFolder(plugin.getDataFolder())
- *     .setFileName("settings.yml")
- *     .build();
- * YamlConfiguration config = holder.getConfig();
- * }</pre>
- *
- * @param <ConfigurationT> The type of FileConfiguration (usually {@link org.bukkit.configuration.file.YamlConfiguration})
+ * @param <T> The type of FileConfiguration (usually {@link YamlConfiguration})
  *
  * @author Bestialus
  * @version 1.0
- * @since 1.0
+ * @since   1.0
  * @see ConfigurationsRegistry
  */
-public interface ConfigurationHolder<ConfigurationT extends FileConfiguration> {
+public interface ConfigurationHolder<T extends FileConfiguration> {
 
   /**
    * Retrieves the loaded configuration instance.
@@ -39,7 +30,7 @@ public interface ConfigurationHolder<ConfigurationT extends FileConfiguration> {
    * @return The loaded configuration object, or {@code null} if loading failed.
    */
   @Nullable
-  ConfigurationT getConfig();
+  T getConfig();
 
   /**
    * Reloads configuration data from the file system.
@@ -80,4 +71,28 @@ public interface ConfigurationHolder<ConfigurationT extends FileConfiguration> {
    * @return The {@link File} representing the configuration file.
    */
   File getConfigFile();
+
+  /**
+   * Validates a set of files using a provided action.
+   *
+   * @param resources     The files to validate
+   * @param action        The action to perform on each file
+   * @param errorTemplate The error message template to use when an exception occurs
+   */
+  default void validate(Stream<File> resources, FileOperation action, String errorTemplate) {
+    resources.forEach(file -> {
+      try {
+        action.execute(file);
+      } catch (Exception e) {
+        // Formats the error message with the specific file path
+        throw new IllegalStateException(String.format(errorTemplate, file.getPath()), e);
+      }
+    });
+  }
+
+  // 1. Define a functional interface that allows Exceptions
+  @FunctionalInterface
+  interface FileOperation {
+    void execute(File file) throws Exception;
+  }
 }

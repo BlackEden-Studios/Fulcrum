@@ -1,50 +1,90 @@
 package com.bestudios.fulcrum.api.util;
 
+import org.bukkit.configuration.file.YamlConfiguration;
+import org.bukkit.plugin.Plugin;
+import org.checkerframework.checker.units.qual.N;
+import org.jetbrains.annotations.NotNull;
+
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.Reader;
+import java.nio.charset.StandardCharsets;
+import java.util.Locale;
+import java.util.Objects;
+
 /**
  * Utility class for common tasks in Fulcrum plugins.
  *
  * @author Bestialus
  * @version 1.0
- * @since 1.0
+ * @since   1.0
  */
 public final class Utils {
 
   public static String capitalizeFirst(String str) {
-    if (str == null || str.isEmpty()) {
-      return str;
-    }
-    return str.substring(0, 1).toUpperCase() + str.substring(1);
+    if (str == null || str.isEmpty()) return str;
+    return str.substring(0, 1).toUpperCase(Locale.getDefault()) + str.substring(1);
   }
 
-  public static int compareVersions(String v1, String v2) {
-    int i = 0, j = 0;
-    int len1 = v1.length(), len2 = v2.length();
+  /**
+   * Compares two version strings.
+   *
+   * @param v1 the older version string
+   * @param v2 the newer version string
+   * @return the result of the comparison. <p> "0" if equal,<p>"-1" if v1 &lt; v2,<p>"1" if v1 &gt; v2
+   */
+  public static int compareVersions(@NotNull String v1, @NotNull String v2) {
+    Objects.requireNonNull(v1, "Version string cannot be null");
+    Objects.requireNonNull(v2, "Version string cannot be null");
 
-    while (i < len1 || j < len2) {
-      int num1 = 0, num2 = 0;
+    // Check for equality
+    if (v1.equals(v2)) return 0;
 
-      // Extract numeric part from v1
-      while (i < len1 && v1.charAt(i) != '.') {
-        num1 = num1 * 10 + (v1.charAt(i) - '0');
-        i++;
+    // Split the string
+    final String[] parts1 = v1.split("\\.");
+    final String[] parts2 = v2.split("\\.");
+
+    // Determine the maximum length to iterate (e.g., comparing "1.2" vs. "1.2.1")
+    final int length = Math.max(parts1.length, parts2.length);
+
+    // Iterate
+    for (int i = 0; i < length; i++) {
+      final int p1 = i < parts1.length ? Integer.parseInt(parts1[i]) : 0;
+      final int p2 = i < parts2.length ? Integer.parseInt(parts2[i]) : 0;
+
+      // Compare the current parts
+      final int result = Integer.compare(p1, p2);
+      if (result != 0) {
+        return result;
       }
-
-      // Extract numeric part from v2
-      while (j < len2 && v2.charAt(j) != '.') {
-        num2 = num2 * 10 + (v2.charAt(j) - '0');
-        j++;
-      }
-
-      // Compare current parts
-      if (num1 > num2) return 1;
-      if (num1 < num2) return -1;
-
-      // Skip the dot and move to next part
-      i++;
-      j++;
     }
 
+    // If we finished the loop without returning, they are equal
     return 0;
+  }
+
+  /**
+   * Loads a YAML configuration from within the plugin JAR resources.
+   *
+   * @param resourcePath The path to the resource relative to the root of the plugin package.
+   * @return The {@link YamlConfiguration} loaded from the resource, or {@code null} if not found.
+   */
+  public static @NotNull YamlConfiguration loadFromResources(Plugin plugin, String resourcePath) {
+    InputStream stream = plugin.getResource(resourcePath);
+    // If the resource is not found, return an empty configuration.
+    if (stream == null) return new YamlConfiguration();
+    // Load the configuration from the stream.
+    Reader reader = new InputStreamReader(stream, StandardCharsets.UTF_8);
+    // Close the streams.
+    try {
+      stream.close();
+      reader.close();
+    } catch (IOException e) {
+      plugin.getLogger().warning("Failed to close stream: " + e.getMessage());
+    }
+    // Return the configuration
+    return YamlConfiguration.loadConfiguration(reader);
   }
 
   /**
@@ -52,7 +92,7 @@ public final class Utils {
    * @param objName The name of the object to be checked.
    * @return A message indicating that the specified object is required to be non-empty.
    */
-  public static String messageRequireNonEmpty(String objName) {
+  public static @NotNull String messageRequireNonEmpty(String objName) {
     return "The " + objName + " cannot be empty";
   }
 
@@ -61,7 +101,7 @@ public final class Utils {
    * @param objName The name of the object to be checked.
    * @return A message indicating that the specified object is required to be non-null.
    */
-  public static String messageRequireNonNull(String objName) {
+  public static @NotNull String messageRequireNonNull(String objName) {
     return "The " + objName + " cannot be null";
   }
 
