@@ -4,10 +4,15 @@ import com.google.errorprone.annotations.CanIgnoreReturnValue;
 import net.kyori.adventure.text.Component;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
+import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Consumer;
 
@@ -74,8 +79,9 @@ public abstract class LinkedMenu extends SimpleMenu {
    * @param pageID The ID of the page to switch to
    * @return this instance
    */
+  @Contract("_ -> this")
   @CanIgnoreReturnValue
-  public LinkedMenu changePage(@NotNull String pageID) {
+  public final LinkedMenu changePage(@NotNull String pageID) {
     // 1. Ensure page exists
     createPage(pageID);
 
@@ -89,6 +95,9 @@ public abstract class LinkedMenu extends SimpleMenu {
     ItemStack[] pageContents = contentsMap.get(pageID);
     getInventory().setContents(pageContents);
 
+    // 5. Call the hook (subclasses can override this safely)
+    onPageChange(pageID);
+
     return this;
   }
 
@@ -100,7 +109,7 @@ public abstract class LinkedMenu extends SimpleMenu {
    * @return this instance
    */
   @CanIgnoreReturnValue
-  public LinkedMenu createPage(@NotNull String pageID) {
+  private LinkedMenu createPage(@NotNull String pageID) {
     if (contentsMap.containsKey(pageID) && actionsMap.containsKey(pageID)) return this;
 
     int size = getInventory().getSize();
@@ -202,6 +211,8 @@ public abstract class LinkedMenu extends SimpleMenu {
 
   @Override
   public abstract LinkedMenu compose();
+
+  public abstract void onPageChange(String pageId);
 
   /**
    * Gets the ID of the current page.

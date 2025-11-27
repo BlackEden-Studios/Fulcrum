@@ -13,9 +13,7 @@ import org.jetbrains.annotations.NotNull;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Objects;
 import java.util.function.Consumer;
-import java.util.stream.IntStream;
 
 /**
  * Abstract implementation of the Menu interface providing common functionality for GUI menus.
