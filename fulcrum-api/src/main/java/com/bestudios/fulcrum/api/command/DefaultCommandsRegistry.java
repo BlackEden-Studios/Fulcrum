@@ -45,11 +45,11 @@ public class DefaultCommandsRegistry implements CommandsRegistry<CommandTree, Co
   /**
    * Creates a new DefaultCommandsRegistry instance.
    *
-   * @param plugin the JavaPlugin instance that owns this registry (must not be null)
+   * @param pluginRef the JavaPlugin instance that owns this registry (must not be null)
    * @throws NullPointerException if plugin instance is null
    */
-  public DefaultCommandsRegistry(JavaPlugin plugin) {
-    this.plugin = Objects.requireNonNull(plugin, "Plugin cannot be null");
+  public DefaultCommandsRegistry(JavaPlugin pluginRef) {
+    this.plugin = Objects.requireNonNull(pluginRef, "Plugin cannot be null");
   }
 
   /**
@@ -103,25 +103,17 @@ public class DefaultCommandsRegistry implements CommandsRegistry<CommandTree, Co
       return false;
     }
 
-    try {
-      // Register the command in the internal map
-      commandsMap.put(commandName, command);
+    // Register the command in the internal map
+    commandsMap.put(commandName, command);
 
-      // Get the Bukkit command
-      PluginCommand pluginCommand = plugin.getCommand(commandName);
-      // If the command is null, the command was not found in plugin.yml
-      Objects.requireNonNull(pluginCommand,"Command '" + commandName + "' not found in plugin.yml");
+    // Get the Bukkit command
+    PluginCommand pluginCommand = plugin.getCommand(commandName);
+    // If the command is null, the command was not found in plugin.yml
+    Objects.requireNonNull(pluginCommand,"Command '" + commandName + "' not found in plugin.yml");
 
-      pluginCommand.setExecutor(command);
-      pluginCommand.setTabCompleter(command);
-      return true;
-
-    } catch (Exception e) {
-      plugin.getLogger().severe("Failed to register command '" + commandName + "': " + e.getMessage() +
-                                "\n" + Arrays.toString(e.getStackTrace()));
-      commandsMap.remove(commandName); // Rollback on error
-      return false;
-    }
+    pluginCommand.setExecutor(command);
+    pluginCommand.setTabCompleter(command);
+    return true;
   }
 
   /**
@@ -169,7 +161,8 @@ public class DefaultCommandsRegistry implements CommandsRegistry<CommandTree, Co
                        // Use the existing tree
                        getCommandHandler(commandName) :
                        // Create a new tree
-                       new CommandTree(commandName.toLowerCase() + ".use", "Usage: /" + commandName + " <subcommand>");
+                       new CommandTree(commandName.toLowerCase(CommandUtils.DEFAULT_LOCALE) + ".use",
+                                       "Usage: /" + commandName + " <subcommand>");
     // Validate tree
     Objects.requireNonNull(tree, "CommandTree cannot be null");
     // Process each CommandWrapper and add to the tree

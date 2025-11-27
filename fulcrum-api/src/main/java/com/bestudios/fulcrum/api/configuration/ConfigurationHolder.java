@@ -8,7 +8,6 @@ import org.jetbrains.annotations.Nullable;
 import java.io.File;
 import java.io.IOException;
 import java.util.Set;
-import java.util.stream.Stream;
 
 /**
  * Represents a general-purpose holder interface for configuration management in Fulcrum plugins.
