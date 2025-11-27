@@ -4,193 +4,251 @@ import com.google.errorprone.annotations.CanIgnoreReturnValue;
 import net.kyori.adventure.text.Component;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
+import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Consumer;
-import java.util.stream.IntStream;
 
 /**
- * A menu implementation that links multiple inventories together, allowing navigation between them.
- *
- * <p>LinkedMenu enables creating multi-page menus or menu systems where click actions
- * can transition players between different inventory views seamlessly.
+ * A menu implementation that links multiple page states together.
  *
  * @author Bestialus
  * @version 1.0
- * @since 1.0
+ * @since   1.0
  * @see SimpleMenu
  */
 public abstract class LinkedMenu extends SimpleMenu {
 
-  private String currentPageId;
-  private final Map<String, ItemStack[]> items;
-  private final Map<String, Consumer<Player>[]> actions;
+  /** The ID of the current page */
+  protected String currentPageId;
 
-  public LinkedMenu(@NotNull Rows rows, Component title, boolean placeholders) {
-    super(rows, title, placeholders);
-    // Initialize the maps
-    items = new ConcurrentHashMap<>();
-    actions = new ConcurrentHashMap<>();
-    // Create the default page
-    currentPageId = "default";
+  /**
+   * Backing storage for items.
+   * We store ItemStack[] arrays, not Inventory objects, to allow fast switching
+   * of contents without closing the player's window.
+   */
+  protected final Map<String, ItemStack[]> contentsMap;
+
+  /**
+   * Backing storage for actions.
+   * Stores Lists to be compatible with SimpleMenu's internal structure.
+   */
+  protected final Map<String, List<Consumer<Player>>> actionsMap;
+
+  // -- Constructors --
+
+  public LinkedMenu(@NotNull Rows rows, Component title, boolean usePlaceholders) {
+    super(rows, title, usePlaceholders);
+
+    // Initialize storage
+    this.contentsMap = new ConcurrentHashMap<>();
+    this.actionsMap = new ConcurrentHashMap<>();
+
+    // Initialize the starting page immediately so the menu is never in an invalid state
+    this.currentPageId = "starting";
     createPage(currentPageId);
-    // Fill the inventory with empty items
+
+    // Force the swap to bind 'this.actions' to the starting page
+    changePage(currentPageId);
   }
 
   public LinkedMenu(@NotNull Rows rows, Component title) {
-    this(rows, title,false);
+    this(rows, title, false);
   }
 
   public LinkedMenu(@NotNull Rows rows) {
     this(rows, null, false);
   }
 
-  @Override
-  public void click(Player player, int slot) {
-    final Consumer<Player> action = actions.get(currentPageId)[slot];
-    if (action != null) action.accept(player);
+  /**
+   * Switches the menu view to a specific page.
+   * <p>
+   * This method performs the Reference Swap:
+   * <ol>
+   *   <li>Updates the visual inventory contents.</li>
+   *   <li>Points the menu actions to the new page's action list.</li>
+   * </ol>
+   *
+   * @param pageID The ID of the page to switch to
+   * @return this instance
+   */
+  @Contract("_ -> this")
+  @CanIgnoreReturnValue
+  public final LinkedMenu changePage(@NotNull String pageID) {
+    // 1. Ensure page exists
+    createPage(pageID);
+
+    // 2. Update state tracker
+    this.currentPageId = pageID;
+
+    // 3. Action update
+    this.actions = actionsMap.get(pageID);
+
+    // 4. Visual update
+    ItemStack[] pageContents = contentsMap.get(pageID);
+    getInventory().setContents(pageContents);
+
+    // 5. Call the hook (subclasses can override this safely)
+    onPageChange(pageID);
+
+    return this;
   }
 
   /**
-   * Sets an item at the specified slot with an associated click action.
+   * Creates a new page if it doesn't exist.
+   * Initializes the backing arrays and lists.
    *
-   * @param slot The inventory slot to place the item in
-   * @param item The ItemStack to place in the slot
-   * @param action The action to execute when the item is clicked
+   * @param pageID The ID of the page to create
+   * @return this instance
    */
+  @CanIgnoreReturnValue
+  private LinkedMenu createPage(@NotNull String pageID) {
+    if (contentsMap.containsKey(pageID) && actionsMap.containsKey(pageID)) return this;
+
+    int size = getInventory().getSize();
+
+    // 1. Initialize Items
+    ItemStack[] items = new ItemStack[size];
+    if (usesPlaceholders())
+      Arrays.fill(items, PLACEHOLDER_ITEM);
+    contentsMap.put(pageID, items);
+
+    // 2. Initialize Actions
+    List<Consumer<Player>> actionList = new ArrayList<>(size);
+    for (int i = 0; i < getInventory().getSize(); i++) actionList.add(null);
+    actionsMap.put(pageID, actionList);
+
+    return this;
+  }
+
+  // -- Item Setting Logic --
+
   @Override
-  public void setItem(int slot, ItemStack item, Consumer<Player> action) {
+  public void setItem(int slot, @Nullable ItemStack item, @Nullable Consumer<Player> action) {
+    // Update the item in the backing inventory
+    super.setItem(slot, item, action);
+    // Save the reference in the backing map
+    contentsMap.get(currentPageId)[slot] = getInventory().getItem(slot);
+  }
+
+  /**
+   * Changes an item on a specific page.
+   *
+   * @param slot   The slot to modify
+   * @param item   The item to set
+   * @param action The action to set
+   * @param pageId The ID of the page to modify
+   */
+  public void setItem(int slot, @Nullable ItemStack item, @Nullable Consumer<Player> action, @NotNull String pageId) {
     if (slot < 0 || slot >= getInventory().getSize())
-      throw new IllegalArgumentException("Slot " + slot + " is out of bounds for inventory size " + getInventory().getSize());
-    // Assure the page exists
-    createPage(currentPageId);
+      throw new IllegalArgumentException("Slot " + slot + " out of bounds");
 
-    getInventory().setItem(slot, item == null && usePlaceholders() ? PLACEHOLDER_ITEM : item);
-    items.get(currentPageId)[slot] = item == null && usePlaceholders() ? PLACEHOLDER_ITEM : item;
-    actions.get(currentPageId)[slot] = action;
-  }
+    // 2. If we modify the current page, we must update the live view immediately
+    if (pageId.equals(currentPageId)) {
+      setItem(slot, item, action);
+      return;
+    }
 
-  /**
-   * Sets an item at the specified slot with no click action.
-   *
-   * @param slot The inventory slot to place the item in
-   * @param item The ItemStack to place in the slot
-   */
-  @Override
-  public void setItem(int slot, ItemStack item) {
-    setItem(slot, item, player -> {});
-  }
-
-  /**
-   * Sets an item at the specified slot with an associated click action.
-   *
-   * @param update The MenuUpdate to apply
-   */
-  @Override
-  public void setItem(MenuUpdate update) {
-    setItem(update.slot(), update.item(), update.action());
-  }
-
-  public void setItem(int slot, ItemStack item, Consumer<Player> action, String pageId) {
-    if (slot < 0 || slot >= getInventory().getSize())
-      throw new IllegalArgumentException("Slot " + slot + " is out of bounds for inventory size " + getInventory().getSize());
-    // Assure the page exists
     createPage(pageId);
+    // Update Storage
+    contentsMap.get(pageId)[slot] = (item == null && usesPlaceholders()) ? PLACEHOLDER_ITEM : item;
+    actionsMap.get(pageId).set(slot, action);
 
-    items.get(pageId)[slot] = item == null && usePlaceholders() ? PLACEHOLDER_ITEM : item;
-    actions.get(pageId)[slot] = action;
+
   }
 
+  // -- Convenience Overloads --
+
+  /**
+   * Changes an item on a specific page.
+   *
+   * @param slot   The slot to modify
+   * @param item   The item to set
+   * @param pageId The ID of the page to modify
+   */
   public void setItem(int slot, ItemStack item, String pageId) {
-    setItem(slot, item, player -> {}, pageId);
+    setItem(slot, item, null, pageId);
   }
 
-  public void setItem(MenuUpdate update, String pageId) {
+  /**
+   * Changes an item on a specific page.
+   *
+   * @param update The update to apply
+   * @param pageId The ID of the page to modify
+   */
+  public void setItem(@NotNull MenuUpdate update, String pageId) {
     setItem(update.slot(), update.item(), update.action(), pageId);
   }
 
   /**
-   * Removes an item from the specified slot. It's a convenient alternative to setting the item to null.
+   * Removes an item from a specific page.
    *
-   * @param slot The inventory slot to remove the item from
+   * @param slot   The slot in which to remove the item
+   * @param pageId The ID of the page to modify
    */
   public void removeItem(int slot, String pageId) {
-    setItem(slot, null, pageId);
+    setItem(slot, null, null, pageId);
   }
 
   /**
-   * Abstract method to be implemented by subclasses to set up menu items.
-   * <p></p>
-   * This method is called before the menu is shown to a player.
+   * Bulk update for a specific page
+   *
+   * @param updates The updates to apply
+   * @param pageId  The ID of the page to modify
+   * @return this instance
    */
-  @Override
-  public abstract LinkedMenu compose();
-
-  /**
-   * Updates multiple items in the menu.
-   * @param updates The list of MenuUpdates to apply
-   * @return The updated menu
-   */
-  @Override
-  public LinkedMenu update(MenuUpdate[] updates) {
-    for (MenuUpdate update : updates) setItem(update);
-    return this;
-  }
-
-  public LinkedMenu update(MenuUpdate[] updates, String pageId) {
+  public LinkedMenu update(MenuUpdate @NotNull [] updates, String pageId) {
     for (MenuUpdate update : updates) setItem(update, pageId);
     return this;
   }
 
-  /**
-   * Gets the items in this menu.
-   *
-   * @return The array of items
-   */
-  public ItemStack[] getItems(String pageId) {
-    return items.get(pageId);
-  }
+  @Override
+  public abstract LinkedMenu compose();
+
+  public abstract void onPageChange(String pageId);
 
   /**
-   * Gets the actions in this menu indexed by slot.
-   *
-   * @return Array of slots to click actions
+   * Gets the ID of the current page.
+   * @return The current page ID
    */
-  public Consumer<Player>[] getActions(String pageId) {
-    return actions.get(pageId);
-  }
-
-  public LinkedMenu changePage(String pageId) {
-    createPage(pageId);
-    this.currentPageId = pageId;
-    IntStream.range(0, getInventory().getSize()).forEach(
-            slot -> {
-              ItemStack item = items.get(this.currentPageId)[slot];
-              getInventory().setItem(slot, item == null && usePlaceholders() ? PLACEHOLDER_ITEM : item);
-            }
-    );
-    return this;
-  }
-
-  @CanIgnoreReturnValue
-  @SuppressWarnings({"unchecked"})
-  public LinkedMenu createPage(String id) {
-    if (!items.containsKey(id) || !actions.containsKey(id)) {
-      items.put(id, new ItemStack[getInventory().getSize()]);
-      actions.put(id, new Consumer[getInventory().getSize()]);
-    }
-    return this;
-  }
-
   public String getCurrentPageId() {
     return currentPageId;
   }
 
-  public void setCurrentPageId(String currentPageId) {
-    this.currentPageId = currentPageId;
+  /**
+  * Gets the IDs of all pages in this menu.
+  * @return The IDs of all pages
+  */
+  public Set<String> getPageIds() {
+    return contentsMap.keySet();
   }
 
+  /**
+   * Gets the stored items for a specific page.
+   *
+   * @param pageId The ID of the page to retrieve items for
+   * @return The items stored in the specified page
+   */
+  public ItemStack[] getItems(String pageId) {
+    return contentsMap.get(pageId);
+  }
 
+  /**
+   * Gets the stored actions for a specific page.
+   *
+   * @param pageId The ID of the page to retrieve actions for
+   * @return The actions stored in the specified page
+   */
+  @SuppressWarnings("unchecked")
+  public Consumer<Player>[] getActions(String pageId) {
+    List<Consumer<Player>> list = actionsMap.get(pageId);
+    return list == null ? new Consumer[0] : list.toArray(new Consumer[0]);
+  }
 }

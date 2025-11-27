@@ -13,7 +13,7 @@ import java.util.function.Consumer;
  * Service interface for interacting with custom items and blocks
  * <p></p>
  * This interface provides methods to check for custom items and blocks,
- * retrieve their associated ItemStacks, and perform actions on them.
+ * retrieve their associated ItemStacks, and perform actionsMap on them.
  *
  * @author Bestialus
  * @version 1.0

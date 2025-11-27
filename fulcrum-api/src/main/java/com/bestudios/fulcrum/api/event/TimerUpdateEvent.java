@@ -9,7 +9,7 @@ import org.jetbrains.annotations.NotNull;
  * Event triggered when a timer update occurs in Fulcrum.
  * This event is fired by the TimerInfoUpdater when the elapsed time reaches a multiple of the update time.
  * <p></p>
- * Plugins can listen for this event to perform actions when the daily timer updates,
+ * Plugins can listen for this event to perform actionsMap when the daily timer updates,
  * such as resetting player statistics, refreshing in-game resources, or performing scheduled tasks.
  *
  * @author Bestialus

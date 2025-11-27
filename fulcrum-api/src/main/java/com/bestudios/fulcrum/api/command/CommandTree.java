@@ -343,7 +343,7 @@ public class CommandTree implements CommandExecutor, TabCompleter {
 
 
   /**
-   * Functional interface for command actions
+   * Functional interface for command actionsMap
    */
   @FunctionalInterface
   public interface CommandAction {

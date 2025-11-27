@@ -110,7 +110,7 @@ public record CommandWrapper(
         throw new IllegalStateException("Command path must be properly set ");
 
       if (builderCommandAction == null)
-        throw new IllegalStateException("Only one of the command actions should be set");
+        throw new IllegalStateException("Only one of the command actionsMap should be set");
 
       return new CommandWrapper(
               builderCommandPath,
