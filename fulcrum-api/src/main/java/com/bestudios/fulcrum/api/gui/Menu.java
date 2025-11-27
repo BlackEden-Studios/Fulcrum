@@ -6,7 +6,6 @@ import org.bukkit.inventory.ItemStack;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.ArrayList;
 import java.util.Objects;
 import java.util.function.Consumer;
 
@@ -20,7 +19,7 @@ import java.util.function.Consumer;
  *
  * @author Bestialus
  * @version 1.0
- * @since 1.0
+ * @since   1.0
  * @see SimpleMenu
  */
 public interface Menu extends InventoryHolder {
