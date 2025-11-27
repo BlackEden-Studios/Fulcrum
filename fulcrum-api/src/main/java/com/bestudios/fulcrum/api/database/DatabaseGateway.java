@@ -5,6 +5,7 @@ import org.bukkit.configuration.file.FileConfiguration;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.io.IOException;
 import java.util.Map;
 
 /**
@@ -73,24 +74,24 @@ public interface DatabaseGateway {
    *
    * @param query The database query
    * @param value The value to set
-   * @throws Exception if an error occurs during the operation
+   * @throws IOException if an error occurs during the operation
    */
-  void setField(@NotNull DatabaseQuery query, byte[] value) throws Exception;
+  void setField(@NotNull DatabaseQuery query, byte[] value) throws IOException;
 
   /**
    * Sets multiple fields in the database based on the provided query and map of fields and values.
    *
    * @param query            The database query
    * @param fieldsAndValues  A map of fields and their corresponding values to set
-   * @throws Exception if an error occurs during the operation
+   * @throws IOException if an error occurs during the operation
    */
-  void setFields(@NotNull DatabaseQuery query, @NotNull Map<byte[], byte[]> fieldsAndValues) throws Exception;
+  void setFields(@NotNull DatabaseQuery query, @NotNull Map<byte[], byte[]> fieldsAndValues) throws IOException;
 
   /**
    * Deletes a specific entry from the database based on the provided query.
    *
    * @param query The database query
-   * @throws Exception if an error occurs during the operation
+   * @throws IOException if an error occurs during the operation
    */
-  void deleteField(@NotNull DatabaseQuery query) throws Exception;
+  void deleteField(@NotNull DatabaseQuery query) throws IOException;
 }

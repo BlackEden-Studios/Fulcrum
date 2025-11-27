@@ -10,8 +10,16 @@ import com.bestudios.fulcrum.database.RedisQuery;
 import org.bukkit.plugin.ServicePriority;
 import org.jetbrains.annotations.NotNull;
 
-import java.util.*;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Redis-based implementation of MessageService.
@@ -20,6 +28,7 @@ import java.util.concurrent.CompletableFuture;
  * @author Bestialus
  * @version 1.0
  * @since   1.0
+ * @see Message
  */
 public class FulcrumMessageService implements MessageService {
 
@@ -35,37 +44,45 @@ public class FulcrumMessageService implements MessageService {
   /**
    * Constructs a new FulcrumMessageService with the provided plugin and database gateway.
    *
-   * @param plugin The Fulcrum plugin instance
-   * @param gateway The database gateway instance
+   * @param pluginRef The Fulcrum plugin instance
+   * @param databaseGateway The database gateway instance
    */
-  public FulcrumMessageService(@NotNull FulcrumPlugin plugin, @NotNull ServicePriority priority, @NotNull DatabaseGateway gateway) {
-    this.plugin   = Objects.requireNonNull(plugin,   Utils.messageRequireNonNull("plugin"));
-    this.priority = Objects.requireNonNull(priority, Utils.messageRequireNonNull("priority"));
-    this.gateway  = Objects.requireNonNull(gateway,  Utils.messageRequireNonNull("gateway"));
+  public FulcrumMessageService(
+          @NotNull FulcrumPlugin pluginRef,
+          @NotNull ServicePriority servicePriority,
+          @NotNull DatabaseGateway databaseGateway
+  ) {
+    this.plugin   = Objects.requireNonNull(pluginRef,   Utils.messageRequireNonNull("plugin"));
+    this.priority = Objects.requireNonNull(servicePriority, Utils.messageRequireNonNull("priority"));
+    this.gateway  = Objects.requireNonNull(databaseGateway,  Utils.messageRequireNonNull("gateway"));
   }
 
   @Override @NotNull
-  public CompletableFuture<Boolean> sendMessage(@NotNull String channel, @NotNull UUID playerUUID, @NotNull Message message) {
+  public CompletableFuture<Boolean> sendMessage(
+          @NotNull String channel,
+          @NotNull UUID playerUUID,
+          @NotNull Message message
+  ) {
     Objects.requireNonNull(channel,    Utils.messageRequireNonNull("channel"));
     Objects.requireNonNull(playerUUID, Utils.messageRequireNonNull("player UUID"));
     Objects.requireNonNull(message,    Utils.messageRequireNonNull("message"));
     // Create a future for the operation
     return CompletableFuture.supplyAsync(() -> {
+      DatabaseQuery query = createQuery(channel, playerUUID);
+      String fieldName = generateFieldName(message);
+      byte[] messageData = message.toBytes();
+
+      // Store as a hash field
+      Map<byte[], byte[]> fieldMap = new ConcurrentHashMap<>();
+      fieldMap.put(fieldName.getBytes(), messageData);
+
       try {
-        DatabaseQuery query = createQuery(channel, playerUUID);
-        String fieldName = generateFieldName(message);
-        byte[] messageData = message.toBytes();
-
-        // Store as a hash field
-        Map<byte[], byte[]> fieldMap = new HashMap<>();
-        fieldMap.put(fieldName.getBytes(), messageData);
         gateway.setFields(query, fieldMap);
-
-        return true;
-      } catch (Exception e) {
-        plugin.getLogger().severe("Failed to send message: " + e.getMessage());
+      } catch (IOException e) {
+        plugin.getLogger().severe("Failed to store message: " + e.getMessage());
         return false;
       }
+      return true;
     });
   }
 

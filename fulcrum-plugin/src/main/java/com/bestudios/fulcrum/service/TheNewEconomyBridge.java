@@ -444,12 +444,12 @@ public class TheNewEconomyBridge implements EconomyService, Economy {
   }
 
   @Override
-  public com.bestudios.fulcrum.api.service.economy.EconomyResponse withdraw(@NotNull UUID accountID, @NotNull BigDecimal amount, @NotNull String currency) {
+  public com.bestudios.fulcrum.api.service.economy.@NotNull EconomyResponse withdraw(@NotNull UUID accountID, @NotNull BigDecimal amount, @NotNull String currency) {
     return new com.bestudios.fulcrum.api.service.economy.EconomyResponse(this.vaultEconomy.withdraw(this.getPluginName(), accountID, currency, amount));
   }
 
   @Override
-  public com.bestudios.fulcrum.api.service.economy.EconomyResponse deposit(@NotNull UUID accountID, @NotNull BigDecimal amount, @NotNull String currency) {
+  public com.bestudios.fulcrum.api.service.economy.@NotNull EconomyResponse deposit(@NotNull UUID accountID, @NotNull BigDecimal amount, @NotNull String currency) {
     return new com.bestudios.fulcrum.api.service.economy.EconomyResponse(this.vaultEconomy.deposit(this.getPluginName(), accountID, currency, amount));
   }
 

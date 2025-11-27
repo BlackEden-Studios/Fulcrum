@@ -1,5 +1,6 @@
 package com.bestudios.fulcrum.api.service.messaging;
 
+import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -17,63 +18,84 @@ import java.util.Objects;
  */
 public final class NotificationMessage extends Message {
 
+  /** The notification of this message */
   public static final String TYPE = "NOTIFICATION";
 
+  /** The title of the notification */
   private final String title;
+  /** The content of the notification */
   private final String content;
-  private final NotificationType notificationType;
+  /** The type of notification */
+  private final NotificationType notification;
 
+  /** The type of notification */
   public enum NotificationType {
     INFO, WARNING, ERROR, SUCCESS, ACHIEVEMENT
   }
 
+  /**
+   * Constructs a new NotificationMessage instance.
+   * @param notificationTitle   The title of the notification
+   * @param notificationContent The content of the notification
+   * @param notificationType    The type of notification
+   */
   public NotificationMessage(
-          @NotNull String title,
-          @NotNull String content,
+          @NotNull String notificationTitle,
+          @NotNull String notificationContent,
           @NotNull NotificationType notificationType) {
     super(TYPE);
-    this.title = Objects.requireNonNull(title, "Title cannot be null");
-    this.content = Objects.requireNonNull(content, "Content cannot be null");
-    this.notificationType = Objects.requireNonNull(notificationType, "Type cannot be null");
+    this.title        = Objects.requireNonNull(notificationTitle, "Title cannot be null");
+    this.content      = Objects.requireNonNull(notificationContent, "Content cannot be null");
+    this.notification = Objects.requireNonNull(notificationType, "Type cannot be null");
   }
 
-  @NotNull
+  /**
+   * Gets the title of the notification.
+   * @return The notification title
+   */
+  @NotNull @Contract(pure = true)
   public String getTitle() {
     return title;
   }
 
-  @NotNull
+  /**
+   * Gets the content of the notification.
+   * @return The notification content
+   */
+  @NotNull @Contract(pure = true)
   public String getContent() {
     return content;
   }
 
-  @NotNull
+  /**
+   * Gets the type of notification.
+   * @return The notification type
+   */
+  @NotNull @Contract(pure = true)
   public NotificationType getNotificationType() {
-    return notificationType;
+    return notification;
   }
 
   @Override
   protected void serializeFields(@NotNull Map<String, String> map) {
     map.put("title", title);
     map.put("content", content);
-    map.put("notificationType", notificationType.name());
+    map.put("type", notification.name());
   }
 
+  /**
+   * Creates a NotificationMessage instance from a Map using type discrimination.
+   * @param map The map containing message data
+   * @return NotificationMessage instance or null if invalid
+   */
   @Nullable
   static NotificationMessage fromMapInternal(@NotNull Map<String, String> map) {
     String title = map.get("title");
     String content = map.get("content");
-    String typeStr = map.get("notificationType");
+    String typeStr = map.get("type");
+    // Empty fields are invalid
+    if (title == null || content == null || typeStr == null) return null;
 
-    if (title == null || content == null || typeStr == null) {
-      return null;
-    }
-
-    try {
-      NotificationType type = NotificationType.valueOf(typeStr);
-      return new NotificationMessage(title, content, type);
-    } catch (IllegalArgumentException e) {
-      return null;
-    }
+    return new NotificationMessage(title, content, NotificationType.valueOf(typeStr));
   }
 }

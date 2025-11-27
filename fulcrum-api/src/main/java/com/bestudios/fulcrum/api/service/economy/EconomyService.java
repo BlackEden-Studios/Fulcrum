@@ -14,14 +14,12 @@ import java.util.UUID;
  * Provides methods for currency information, account management,
  * balance inquiries, transactions, and shared account handling.
  *
- * @since 1.0
+ * @author Bestialus
  * @version 1.0
- *
+ * @since   1.0
  * @see Service
  * @see EconomyResponse
  * @see EconomyPermission
- *
- * @author Bestialus
  */
 public interface EconomyService extends Service {
 
@@ -43,7 +41,7 @@ public interface EconomyService extends Service {
    *
    * @return The number of fractional digits.
    */
-  default int digitsPrecision(@NotNull final String currency) {
+  default int digitsPrecision(@NotNull String currency) {
     return digitsPrecision();
   }
 
@@ -55,7 +53,7 @@ public interface EconomyService extends Service {
    * @return The formatted string.
    */
   @NotNull
-  default String format(@NotNull final BigDecimal amount) {
+  default String format(@NotNull BigDecimal amount) {
     return format(amount, getDefaultCurrency());
   }
 
@@ -68,7 +66,7 @@ public interface EconomyService extends Service {
    * @return The formatted string.
    */
   @NotNull
-  String format(@NotNull final BigDecimal amount, @NotNull final String currency);
+  String format(@NotNull BigDecimal amount, @NotNull String currency);
 
   /**
    * Checks if a currency with the specified name exists.
@@ -77,7 +75,7 @@ public interface EconomyService extends Service {
    *
    * @return true if the currency exists, false otherwise.
    */
-  boolean hasCurrency(@NotNull final String currency);
+  boolean hasCurrency(@NotNull String currency);
 
   /**
    * Gets the default currency name.
@@ -110,7 +108,7 @@ public interface EconomyService extends Service {
    *
    * @return The singular name of the currency.
    */
-  String currencyNameSingular(@NotNull final String currency);
+  String currencyNameSingular(@NotNull String currency);
 
   /**
    * Returns the name of a specific currency in plural form.
@@ -119,7 +117,7 @@ public interface EconomyService extends Service {
    *
    * @return The plural name of the currency.
    */
-  String currencyNamePlural(@NotNull final String currency);
+  String currencyNamePlural(@NotNull String currency);
 
   /**
    * Returns a list of currencies used by the economy plugin.
@@ -142,7 +140,7 @@ public interface EconomyService extends Service {
    *                      
    * @return true if the account was created successfully, false otherwise.
    */
-  boolean createAccount(@NotNull final UUID accountID, @NotNull final String name, boolean playerAccount);
+  boolean createAccount(@NotNull UUID accountID, @NotNull String name, boolean playerAccount);
 
   /**
    * Returns a map of all UUIDs with accounts and their last-known names.
@@ -160,7 +158,7 @@ public interface EconomyService extends Service {
    * @return The name associated with the account.
    */
   @NotNull
-  Optional<String> getAccountName(@NotNull final UUID accountID);
+  Optional<String> getAccountName(@NotNull UUID accountID);
 
   /**
    * Checks if an account exists for the given UUID.
@@ -169,7 +167,7 @@ public interface EconomyService extends Service {
    *                  
    * @return true if the account exists, false otherwise.
    */
-  boolean hasAccount(@NotNull final UUID accountID);
+  boolean hasAccount(@NotNull UUID accountID);
 
   /**
    * Renames an account.
@@ -179,7 +177,7 @@ public interface EconomyService extends Service {
    *             
    * @return true if the account was renamed successfully, false otherwise.
    */
-  boolean renameAccount(@NotNull final UUID accountID, @NotNull final String name);
+  boolean renameAccount(@NotNull UUID accountID, @NotNull String name);
 
   /**
    * Deletes an account.
@@ -188,7 +186,7 @@ public interface EconomyService extends Service {
    *
    * @return true if the account was deleted successfully, false otherwise.
    */
-  boolean deleteAccount(@NotNull final UUID accountID);
+  boolean deleteAccount(@NotNull UUID accountID);
 
   /*
    * Account Balance Methods
@@ -202,7 +200,7 @@ public interface EconomyService extends Service {
    *
    * @return true if the account supports the currency, false otherwise.
    */
-  boolean accountSupportsCurrency(@NotNull final UUID accountID, @NotNull final String currency);
+  boolean accountSupportsCurrency(@NotNull UUID accountID, @NotNull String currency);
 
   /**
    * Gets the balance of an account with the default currency.
@@ -212,7 +210,7 @@ public interface EconomyService extends Service {
    * @return The balance of the account.
    */
   @NotNull
-  BigDecimal balance(@NotNull final UUID accountID);
+  BigDecimal balance(@NotNull UUID accountID);
 
   /**
    * Gets the balance of an account with a specific currency.
@@ -223,7 +221,7 @@ public interface EconomyService extends Service {
    * @return The balance of the account in the specified currency.
    */
   @NotNull
-  BigDecimal balance(@NotNull final UUID accountID, @NotNull final String currency);
+  BigDecimal balance(@NotNull UUID accountID, @NotNull String currency);
 
   /**
    * Checks if an account has at least the specified amount.
@@ -233,7 +231,7 @@ public interface EconomyService extends Service {
    *
    * @return true if the account has at least the specified amount, false otherwise.
    */
-  boolean has(@NotNull final UUID accountID, @NotNull final BigDecimal amount);
+  boolean has(@NotNull UUID accountID, @NotNull BigDecimal amount);
 
   /**
    * Checks if an account has at least the specified amount with a specific currency.
@@ -244,7 +242,7 @@ public interface EconomyService extends Service {
    *
    * @return true if the account has at least the specified amount in the specified currency, false otherwise.
    */
-  boolean has(@NotNull final UUID accountID, @NotNull final String currency, @NotNull final BigDecimal amount);
+  boolean has(@NotNull UUID accountID, @NotNull String currency, @NotNull BigDecimal amount);
 
   /*
    * Transaction Methods
@@ -258,7 +256,7 @@ public interface EconomyService extends Service {
    *
    * @return An EconomyResponse indicating the result of the transaction.
    */
-  default EconomyResponse withdraw(@NotNull final UUID accountID, @NotNull final BigDecimal amount) {
+  default EconomyResponse withdraw(@NotNull UUID accountID, @NotNull BigDecimal amount) {
     return withdraw(accountID, amount, getDefaultCurrency());
   }
 
@@ -271,7 +269,8 @@ public interface EconomyService extends Service {
    *
    * @return An EconomyResponse indicating the result of the transaction.
    */
-  EconomyResponse withdraw(@NotNull final UUID accountID, @NotNull final BigDecimal amount, @NotNull final String currency);
+  @NotNull
+  EconomyResponse withdraw(@NotNull UUID accountID, @NotNull BigDecimal amount, @NotNull String currency);
 
   /**
    * Deposits an amount into an account with the default currency.
@@ -281,7 +280,8 @@ public interface EconomyService extends Service {
    *
    * @return An EconomyResponse indicating the result of the transaction.
    */
-  default EconomyResponse deposit(@NotNull final UUID accountID, @NotNull final BigDecimal amount) {
+  @NotNull
+  default EconomyResponse deposit(@NotNull UUID accountID, @NotNull BigDecimal amount) {
     return deposit(accountID, amount, getDefaultCurrency());
   }
 
@@ -294,7 +294,8 @@ public interface EconomyService extends Service {
    *
    * @return An EconomyResponse indicating the result of the transaction.
    */
-  EconomyResponse deposit(@NotNull final UUID accountID, @NotNull final BigDecimal amount, @NotNull final String currency);
+  @NotNull
+  EconomyResponse deposit(@NotNull UUID accountID, @NotNull BigDecimal amount, @NotNull String currency);
 
   /**
    * Sets the balance of an account to a specific amount with the default currency.
@@ -304,7 +305,7 @@ public interface EconomyService extends Service {
    *               
    * @return An EconomyResponse indicating the result of the operation.
    */
-  default EconomyResponse set(@NotNull final UUID accountID, @NotNull final BigDecimal amount) {
+  default EconomyResponse set(@NotNull UUID accountID, @NotNull BigDecimal amount) {
     return set(accountID, amount, getDefaultCurrency());
   }
 
@@ -317,15 +318,11 @@ public interface EconomyService extends Service {
    *
    * @return An EconomyResponse indicating the result of the operation.
    */
-  default EconomyResponse set(@NotNull final UUID accountID, @NotNull final BigDecimal amount, @NotNull final String currency) {
+  default EconomyResponse set(@NotNull UUID accountID, @NotNull BigDecimal amount, @NotNull String currency) {
     BigDecimal balance = balance(accountID, currency);
     int compare = balance.compareTo(amount);
-    if (compare > 0) {
-      return withdraw(accountID, balance.subtract(amount), currency);
-    }
-    if (compare < 0) {
-      return deposit(accountID, amount.subtract(balance), currency);
-    }
+    if (compare > 0) return withdraw(accountID, balance.subtract(amount), currency);
+    if (compare < 0) return deposit(accountID, amount.subtract(balance), currency);
     return new EconomyResponse(BigDecimal.ZERO, amount, true, "");
   }
 
@@ -342,7 +339,7 @@ public interface EconomyService extends Service {
    *
    * @return true if the shared account was created successfully, false otherwise.
    */
-  boolean createSharedAccount(@NotNull final UUID accountID, @NotNull final String name, @NotNull final UUID owner);
+  boolean createSharedAccount(@NotNull UUID accountID, @NotNull String name, @NotNull UUID owner);
 
   /**
    * Gets a list of accounts owned by the specified account.
@@ -351,7 +348,7 @@ public interface EconomyService extends Service {
    *
    * @return A list of UUIDs representing accounts owned by the specified account.
    */
-  default List<UUID> accountsWithOwnerOf(@NotNull final UUID accountID) {
+  default List<UUID> accountsWithOwnerOf(@NotNull UUID accountID) {
     return List.of();
   }
 
@@ -362,7 +359,7 @@ public interface EconomyService extends Service {
    *
    * @return A list of UUIDs representing accounts the specified account is a member of.
    */
-  default List<UUID> accountsWithMembershipTo(@NotNull final UUID accountID) {
+  default List<UUID> accountsWithMembershipTo(@NotNull UUID accountID) {
     return List.of();
   }
 
@@ -374,7 +371,7 @@ public interface EconomyService extends Service {
    *
    * @return A list of UUIDs representing accounts the specified account has access to with the given permissions.
    */
-  default List<UUID> accountsWithAccessTo(@NotNull final UUID accountID, EconomyPermission... permissions) {
+  default List<UUID> accountsWithAccessTo(@NotNull UUID accountID, EconomyPermission... permissions) {
     return List.of();
   }
 
@@ -386,7 +383,7 @@ public interface EconomyService extends Service {
    *
    * @return true if the specified UUID is the owner of the account, false otherwise.
    */
-  boolean isAccountOwner(@NotNull final UUID accountID, @NotNull final UUID uuid);
+  boolean isAccountOwner(@NotNull UUID accountID, @NotNull UUID uuid);
 
   /**
    * Sets the owner of an account.
@@ -396,7 +393,7 @@ public interface EconomyService extends Service {
    *
    * @return true if the owner was set successfully, false otherwise.
    */
-  boolean setOwner(@NotNull final UUID accountID, @NotNull final UUID uuid);
+  boolean setOwner(@NotNull UUID accountID, @NotNull UUID uuid);
 
   /**
    * Checks if the specified UUID is a member of an account.
@@ -406,7 +403,7 @@ public interface EconomyService extends Service {
    *
    * @return true if the specified UUID is a member of the account, false otherwise.
    */
-  boolean isAccountMember(@NotNull final UUID accountID, @NotNull final UUID uuid);
+  boolean isAccountMember(@NotNull UUID accountID, @NotNull UUID uuid);
 
   /**
    * Adds a member to an account.
@@ -416,7 +413,7 @@ public interface EconomyService extends Service {
    *
    * @return true if the member was added successfully, false otherwise.
    */
-  boolean addAccountMember(@NotNull final UUID accountID, @NotNull final UUID uuid);
+  boolean addAccountMember(@NotNull UUID accountID, @NotNull UUID uuid);
 
   /**
    * Adds a member to an account with initial permissions.
@@ -427,7 +424,7 @@ public interface EconomyService extends Service {
    *
    * @return true if the member was added successfully, false otherwise.
    */
-  boolean addAccountMember(@NotNull final UUID accountID, @NotNull final UUID uuid, @NotNull EconomyPermission... initialPermissions);
+  boolean addAccountMember(@NotNull UUID accountID, @NotNull UUID uuid, @NotNull EconomyPermission... initialPermissions);
 
   /**
    * Removes a member from an account.
@@ -437,7 +434,7 @@ public interface EconomyService extends Service {
    *
    * @return true if the member was removed successfully, false otherwise.
    */
-  boolean removeAccountMember(@NotNull final UUID accountID, @NotNull final UUID uuid);
+  boolean removeAccountMember(@NotNull UUID accountID, @NotNull UUID uuid);
 
   /**
    * Checks if an account has a specific permission.
@@ -448,7 +445,7 @@ public interface EconomyService extends Service {
    *
    * @return true if the account has the specified permission, false otherwise.
    */
-  boolean hasAccountPermission(@NotNull final UUID accountID, @NotNull final UUID uuid, @NotNull EconomyPermission permission);
+  boolean hasAccountPermission(@NotNull UUID accountID, @NotNull UUID uuid, @NotNull EconomyPermission permission);
 
   /**
    * Updates an account permission.
@@ -460,6 +457,6 @@ public interface EconomyService extends Service {
    *
    * @return true if the permission was updated successfully, false otherwise.
    */
-  boolean updateAccountPermission(@NotNull final UUID accountID, @NotNull final UUID uuid, @NotNull EconomyPermission permission, boolean value);
+  boolean updateAccountPermission(@NotNull UUID accountID, @NotNull UUID uuid, @NotNull EconomyPermission permission, boolean value);
 }
 
