@@ -2,7 +2,6 @@ package com.bestudios.fulcrum.api.util;
 
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.plugin.Plugin;
-import org.checkerframework.checker.units.qual.N;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.IOException;
@@ -71,20 +70,20 @@ public final class Utils {
    * @return The {@link YamlConfiguration} loaded from the resource, or {@code null} if not found.
    */
   public static @NotNull YamlConfiguration loadFromResources(Plugin plugin, String resourcePath) {
-    InputStream stream = plugin.getResource(resourcePath);
-    // If the resource is not found, return an empty configuration.
-    if (stream == null) return new YamlConfiguration();
-    // Load the configuration from the stream.
-    Reader reader = new InputStreamReader(stream, StandardCharsets.UTF_8);
-    // Close the streams.
-    try {
-      stream.close();
-      reader.close();
+    try (InputStream stream = plugin.getResource(resourcePath)) {
+      // If the resource is not found, return an empty configuration.
+      if (stream == null) return new YamlConfiguration();
+      try (Reader reader = new InputStreamReader(stream, StandardCharsets.UTF_8)) {
+        // Load the configuration
+        return YamlConfiguration.loadConfiguration(reader);
+      } catch (IOException e) {
+        plugin.getLogger().warning("Failed to close reader stream: " + e.getMessage());
+      }
     } catch (IOException e) {
-      plugin.getLogger().warning("Failed to close stream: " + e.getMessage());
+      plugin.getLogger().warning("Failed to close input stream: " + e.getMessage());
     }
-    // Return the configuration
-    return YamlConfiguration.loadConfiguration(reader);
+    return new YamlConfiguration();
+
   }
 
   /**

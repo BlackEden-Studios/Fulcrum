@@ -8,6 +8,7 @@ import org.jetbrains.annotations.NotNull;
 import java.io.File;
 import java.io.IOException;
 import java.util.Objects;
+import java.util.Set;
 import java.util.stream.Stream;
 
 /**
@@ -57,8 +58,8 @@ public class DefaultConfigurationHolder implements ConfigurationHolder<YamlConfi
     this.folder = Objects.requireNonNull(dataFolder, "Data folder cannot be null");
     this.file = Objects.requireNonNull(configFile, "Config file cannot be null");
 
-    this.validate(Stream.of(dataFolder), File::mkdirs, "Failed to create data folder");
-    this.validate(Stream.of(configFile), File::createNewFile, "Failed to create config file");
+    this.validate(Set.of(this.folder), File::mkdirs, "Failed to create data folder");
+    this.validate(Set.of(this.file),   File::createNewFile, "Failed to create config file");
 
     // Synchronize versions if possible
     if (!synchronizeVersions())
@@ -115,19 +116,25 @@ public class DefaultConfigurationHolder implements ConfigurationHolder<YamlConfi
    * @return true if the configuration was updated successfully, false otherwise.
    */
   private boolean synchronizeVersions() {
-    YamlConfiguration config = YamlConfiguration.loadConfiguration(file);
-    config.options().parseComments(true);
-    // Version synchronization
+    YamlConfiguration currentConfig = YamlConfiguration.loadConfiguration(file);
+    currentConfig.options().parseComments(true);
     String version = plugin.getDescription().getVersion();
     // If the version is up to date, return the configuration
-    if (Utils.compareVersions(version, config.getString("version", version)) >= 0) return true;
+    if (Utils.compareVersions(version, currentConfig.getString("version", version)) >= 0) return true;
+    // Otherwise, update the configuration
     plugin.getLogger().warning("Outdated configuration version detected. Updating the configuration file.");
-    config.set("version", version);
+    currentConfig.set("version", version);
     plugin.getLogger().config("Configuration version updated to " + version);
     // Synchronize with defaults resources if available
-    config.setDefaults(Utils.loadFromResources(plugin, file.getName()));
-    config.options().copyDefaults(true);
+    currentConfig.setDefaults(Utils.loadFromResources(plugin, file.getName()));
+    currentConfig.options().copyDefaults(true);
     // Save the updated configuration, if possible
-    return saveConfig();
+    try {
+      config.save(file);
+      return true;
+    } catch (IOException e) {
+      plugin.getLogger().severe("Could not save config: " + getConfigName());
+      return false;
+    }
   }
 }

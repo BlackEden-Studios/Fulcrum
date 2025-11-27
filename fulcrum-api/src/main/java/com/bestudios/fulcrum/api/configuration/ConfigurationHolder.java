@@ -2,9 +2,12 @@ package com.bestudios.fulcrum.api.configuration;
 
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.io.File;
+import java.io.IOException;
+import java.util.Set;
 import java.util.stream.Stream;
 
 /**
@@ -79,11 +82,11 @@ public interface ConfigurationHolder<T extends FileConfiguration> {
    * @param action        The action to perform on each file
    * @param errorTemplate The error message template to use when an exception occurs
    */
-  default void validate(Stream<File> resources, FileOperation action, String errorTemplate) {
+  default void validate(@NotNull Set<File> resources, FileOperation action, @NotNull String errorTemplate) {
     resources.forEach(file -> {
       try {
         action.execute(file);
-      } catch (Exception e) {
+      } catch (IOException e) {
         // Formats the error message with the specific file path
         throw new IllegalStateException(String.format(errorTemplate, file.getPath()), e);
       }
@@ -93,6 +96,6 @@ public interface ConfigurationHolder<T extends FileConfiguration> {
   // 1. Define a functional interface that allows Exceptions
   @FunctionalInterface
   interface FileOperation {
-    void execute(File file) throws Exception;
+    void execute(File file) throws IOException;
   }
 }

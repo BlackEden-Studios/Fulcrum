@@ -17,6 +17,7 @@ import org.jetbrains.annotations.Nullable;
  * @see ConfigurationHolder
  */
 public interface ConfigurationsRegistry<T extends FileConfiguration> {
+
   /**
    * Registers a new configuration holder with the registry.
    *
@@ -24,12 +25,14 @@ public interface ConfigurationsRegistry<T extends FileConfiguration> {
    * @param holder  The configuration holder instance.
    */
   void register(@NotNull String name, @NotNull ConfigurationHolder<T> holder);
+
   /**
    * Unregisters a configuration holder from the registry.
    *
    * @param name The name of the configuration holder to unregister.
    */
   void unregister(@NotNull String name);
+
   /**
    * Checks if a configuration holder is registered with this registry.
    *
@@ -37,6 +40,7 @@ public interface ConfigurationsRegistry<T extends FileConfiguration> {
    * @return true if the holder is registered, false otherwise.
    */
   boolean isRegistered(@NotNull String name);
+
   /**
    * Retrieves a configuration holder by its name.
    *
@@ -45,4 +49,5 @@ public interface ConfigurationsRegistry<T extends FileConfiguration> {
    */
   @Nullable
   ConfigurationHolder<T> getHolder(@NotNull String name);
+
 }

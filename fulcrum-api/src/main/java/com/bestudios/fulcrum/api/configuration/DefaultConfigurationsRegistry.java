@@ -35,6 +35,8 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public class DefaultConfigurationsRegistry implements ConfigurationsRegistry<YamlConfiguration> {
 
+  private static final String NAME_ERROR = "Configuration name cannot be null or blank";
+
   /** Internal thread-safe map storing registered configuration holders. */
   private final Map<String, ConfigurationHolder<YamlConfiguration>> configs = new ConcurrentHashMap<>();
 
@@ -65,9 +67,9 @@ public class DefaultConfigurationsRegistry implements ConfigurationsRegistry<Yam
   @Override
   public void register(@NotNull String name, @NotNull ConfigurationHolder<YamlConfiguration> holder) {
     // Validate
-    Objects.requireNonNull(name, "Configuration name cannot be null");
+    Objects.requireNonNull(name, NAME_ERROR);
     Objects.requireNonNull(holder, "Configuration holder cannot be null");
-    if (name.isBlank()) throw new IllegalArgumentException("Configuration name cannot be blank");
+    if (name.isBlank()) throw new IllegalArgumentException(NAME_ERROR);
 
     // Register
     this.configs.put(name, holder);
@@ -83,7 +85,7 @@ public class DefaultConfigurationsRegistry implements ConfigurationsRegistry<Yam
    */
   @Override
   public void unregister(@NotNull String name) {
-    Objects.requireNonNull(name, "Configuration name cannot be null");
+    Objects.requireNonNull(name, NAME_ERROR);
     this.configs.remove(name);
     plugin.getLogger().info("Unregistered configuration holder '" + name + "'");
   }
@@ -97,7 +99,7 @@ public class DefaultConfigurationsRegistry implements ConfigurationsRegistry<Yam
    */
   @Override
   public boolean isRegistered(@NotNull String name) {
-    Objects.requireNonNull(name, "Configuration name cannot be null");
+    Objects.requireNonNull(name, NAME_ERROR);
     return configs.containsKey(name);
   }
 
@@ -110,7 +112,7 @@ public class DefaultConfigurationsRegistry implements ConfigurationsRegistry<Yam
    */
   @Override @Nullable
   public ConfigurationHolder<YamlConfiguration> getHolder(@NotNull String name) {
-    Objects.requireNonNull(name, "Configuration name cannot be null");
+    Objects.requireNonNull(name, NAME_ERROR);
     return configs.get(name);
   }
 }
