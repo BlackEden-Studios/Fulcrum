@@ -169,10 +169,7 @@ public class DefaultCommandsRegistry implements CommandsRegistry<CommandTree, Co
                        // Use the existing tree
                        getCommandHandler(commandName) :
                        // Create a new tree
-                       new CommandTree.Builder()
-                                      .basePermission(commandName.toLowerCase() + ".use")
-                                      .usageMessage("Usage: /" + commandName + " <subcommand>")
-                                      .build();
+                       new CommandTree(commandName.toLowerCase() + ".use", "Usage: /" + commandName + " <subcommand>");
     // Validate tree
     Objects.requireNonNull(tree, "CommandTree cannot be null");
     // Process each CommandWrapper and add to the tree

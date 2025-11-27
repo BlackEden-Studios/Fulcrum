@@ -55,7 +55,7 @@ import java.util.logging.Level;
  *
  * @author Bestialus
  * @version 1.0
- * @since 1.0
+ * @since   1.0
  * @see CommandsRegistry
  * @see ConfigurationsRegistry
  */
@@ -136,7 +136,7 @@ public abstract class FulcrumPlugin extends JavaPlugin{
    * Registers the base configuration file (config.yml) with the ConfigurationsRegistry.
    */
   private void registerBaseConfiguration() {
-    ConfigurationHolder<YamlConfiguration> configHolder = new DefaultConfigurationHolder.Builder(this)
+    ConfigurationHolder<YamlConfiguration> configHolder = new DefaultConfigurationHolder(this,
             .setFileName(configurationFileName("config"))
             .setDataFolder(getDataFolder())
             .build();

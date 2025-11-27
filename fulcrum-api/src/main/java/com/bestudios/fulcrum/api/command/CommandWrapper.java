@@ -1,7 +1,6 @@
 package com.bestudios.fulcrum.api.command;
 
 import com.bestudios.fulcrum.api.command.CommandTree.CommandAction;
-import com.bestudios.fulcrum.api.command.CommandTree.PlayerCommandAction;
 import com.bestudios.fulcrum.api.command.CommandTree.TabCompleteFunction;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
@@ -10,11 +9,11 @@ import org.jetbrains.annotations.Nullable;
 /**
  * A wrapper class to encapsulate command metadata in a Minecraft plugin.
  *
- * @param path The command path, e.g., "help" or "admin reload"
- * @param action The action to execute for any CommandSender
- * @param playerAction The action to execute for Player senders only
- * @param tabCompleter The function to provide tab completions
- * @param permission The permission required to execute this command
+ * @param path          The command path, e.g., "help" or "admin reload"
+ * @param action        The action to execute for any CommandSender
+ * @param tabCompleter  The function to provide tab completions
+ * @param permission    The permission required to execute this command
+ * @param playerCommand If true, this action will only be executed by players
  *
  * @author Bestialus
  * @version 1.0
@@ -24,9 +23,9 @@ import org.jetbrains.annotations.Nullable;
 public record CommandWrapper(
         @NotNull String path,
         CommandAction action,
-        PlayerCommandAction playerAction,
         TabCompleteFunction tabCompleter,
-        String permission
+        String permission,
+        boolean playerCommand
 ) {
 
   /**
@@ -34,7 +33,7 @@ public record CommandWrapper(
    */
   @Contract(pure = true)
   public boolean isPlayerCommand() {
-    return playerAction != null;
+    return playerCommand;
   }
 
   /**
@@ -46,12 +45,12 @@ public record CommandWrapper(
     private String builderCommandPath;
     /** The action executed by performing this command path */
     private CommandAction builderCommandAction;
-    /** The action executed by performing this command path on a player */
-    private PlayerCommandAction builderPlayerCommandAction;
     /** The function used to provide tab completions */
     private TabCompleteFunction builderTabCompleter;
     /** The permission required to execute this command */
     private String builderPermission;
+    /** The action executed by performing this command path for Player senders only */
+    private boolean builderPlayerCommand;
 
     /**
      * Sets the command path (required)
@@ -70,16 +69,6 @@ public record CommandWrapper(
      */
     public Builder action(@NotNull CommandAction action) {
       this.builderCommandAction = action;
-      return this;
-    }
-
-    /**
-     * Sets the player-specific command action
-     *
-     * @param action The action to execute for Player senders only
-     */
-    public Builder playerAction(@NotNull PlayerCommandAction action) {
-      this.builderPlayerCommandAction = action;
       return this;
     }
 
@@ -104,21 +93,31 @@ public record CommandWrapper(
     }
 
     /**
+     * Sets the command action as player-specific
+     *
+     * @param playerCommand The action to execute for Player senders only
+     */
+    public Builder playerCommand(boolean playerCommand) {
+      this.builderPlayerCommand = playerCommand;
+      return this;
+    }
+
+    /**
      * Builds the CommandWrapper instance
      */
     public CommandWrapper build() {
       if (builderCommandPath == null || builderCommandPath.isBlank())
         throw new IllegalStateException("Command path must be properly set ");
 
-      if (builderCommandAction != null ^ builderPlayerCommandAction != null)
+      if (builderCommandAction == null)
         throw new IllegalStateException("Only one of the command actions should be set");
 
       return new CommandWrapper(
               builderCommandPath,
               builderCommandAction,
-              builderPlayerCommandAction,
               builderTabCompleter,
-              builderPermission
+              builderPermission,
+              builderPlayerCommand
       );
     }
   }

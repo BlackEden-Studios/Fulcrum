@@ -2,13 +2,10 @@ package com.bestudios.fulcrum.api.command;
 
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
-import org.bukkit.Bukkit;
-import org.bukkit.OfflinePlayer;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.command.TabCompleter;
-import org.bukkit.entity.Player;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -16,12 +13,11 @@ import org.jetbrains.annotations.Nullable;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.stream.Collectors;
+
+import static com.bestudios.fulcrum.api.command.CommandUtils.DEFAULT_LOCALE;
 
 /**
  * A functional approach to handling nested Minecraft commands.
@@ -34,20 +30,38 @@ import java.util.stream.Collectors;
  * @see CommandWrapper
  */
 public class CommandTree implements CommandExecutor, TabCompleter {
-  
-  /** The default locale for command tree messages */
-  private static final Locale DEFAULT_LOCALE = Locale.US;
 
   /** The root node of the command tree */
   private final CommandNode rootNode;
   /** The base permission required to execute any command in this tree */
-  private @Nullable String basePermission;
+  private final @Nullable String basePermission;
   /** The usage message for this command tree */
-  private String usageMessage = "Nothing here yet. Try /plugin_name help.";
+  private final String usage;
 
-  /** Creates a new CommandTree */
-  public CommandTree() {
+  /**
+   * Creates a new CommandTree
+   * @param permission   The base permission required to execute any command in this tree
+   * @param usageMessage The usage message for this command tree
+   */
+  public CommandTree(@Nullable String permission, @Nullable String usageMessage) {
+    this.basePermission = permission;
+    this.usage = usageMessage != null ? usageMessage : "Nothing here yet. Try /plugin_name help.";
     this.rootNode = new CommandNode();
+  }
+
+  /**
+   * Creates a new CommandTree with specified base permission and no usage message
+   * @param permission The base permission required to execute any command in this tree
+   */
+  public CommandTree(@Nullable String permission) {
+    this(permission, null);
+  }
+
+  /**
+   * Creates a new CommandTree with no base permission or usage message
+   */
+  public CommandTree() {
+    this(null, null);
   }
 
   /**
@@ -57,43 +71,71 @@ public class CommandTree implements CommandExecutor, TabCompleter {
    * @param path   The command path, e.g., "command subcommand"
    * @param action The action to execute when the command is called
    */
-  public void registerCommand(String path, CommandAction action) {
-    registerCommand(path, action, null);
+  public CommandTree registerCommand(@NotNull String path, CommandAction action) {
+    return registerCommand(path, action, null, false);
   }
 
   /**
-   * Registers a command with the specified path, action, and permission.
+   * Registers a command with the specified path, action and permission.
    * If the action is null, this command node will not execute any action.
    *
    * @param path       The command path, e.g., "command subcommand"
    * @param action     The action to execute when the command is called
    * @param permission The permission required to execute this command
    */
-  public void registerCommand(String path, CommandAction action, String permission) {
-    this.findTargetNode(path.split("\\s+"), true).node.setAction(action, permission);
+  public CommandTree registerCommand(@NotNull String path, CommandAction action, String permission) {
+    return registerCommand(path, action, permission, false);
   }
 
   /**
-   * Registers a player-specific command with the specified path and action.
+   * Registers a command with the specified path, action, and player-only behavior.
    * If the action is null, this command node will not execute any action.
    *
-   * @param path   The command path, e.g., "player command"
-   * @param action The action to execute when the command is called by a player
+   * @param path            The command path, e.g., "command subcommand"
+   * @param action          The action to execute when the command is called
+   * @param isPlayerCommand If true, this action will only be executed by players.
    */
-  public void registerPlayerCommand(String path, PlayerCommandAction action) {
-    registerPlayerCommand(path, action, null);
+  public CommandTree registerCommand(@NotNull String path, CommandAction action, boolean isPlayerCommand) {
+    return registerCommand(path, action, null, isPlayerCommand);
   }
 
   /**
-   * Registers a player-specific command with the specified path, action, and permission.
+   * Registers a command with the specified path, action, and permission.
    * If the action is null, this command node will not execute any action.
    *
-   * @param path       The command path, e.g., "player command"
-   * @param action     The action to execute when the command is called by a player
+   * @param path            The command path, e.g., "command subcommand"
+   * @param action          The action to execute when the command is called
+   * @param permission      The permission required to execute this command
+   * @param isPlayerCommand If true, this action will only be executed by players.
+   */
+  public CommandTree registerCommand(@NotNull String path, CommandAction action, String permission, boolean isPlayerCommand) {
+    this.findTargetNode(path.split("\\s+"), true).node()
+        .setAction(action, permission, isPlayerCommand);
+
+    return this;
+  }
+
+  /**
+   * Registers a player command with the specified path and action.
+   * If the action is null, this command node will not execute any action.
+   *
+   * @param path   The command path, e.g., "command subcommand"
+   * @param action The action to execute when the command is called
+   */
+  public CommandTree registerPlayerCommand(@NotNull String path, CommandAction action) {
+    return registerCommand(path, action, null, true);
+  }
+
+  /**
+   * Registers a player command with the specified path, action, and permission.
+   * If the action is null, this command node will not execute any action.
+   *
+   * @param path       The command path, e.g., "command subcommand"
+   * @param action     The action to execute when the command is called
    * @param permission The permission required to execute this command
    */
-  public void registerPlayerCommand(String path, PlayerCommandAction action, String permission) {
-    this.findTargetNode(path.split("\\s+"), true).node().setPlayerAction(action, permission);
+  public CommandTree registerPlayerCommand(@NotNull String path, CommandAction action, String permission) {
+    return registerCommand(path, action, permission, true);
   }
 
   /**
@@ -103,8 +145,11 @@ public class CommandTree implements CommandExecutor, TabCompleter {
    * @param path      The command path, e.g., "command subcommand"
    * @param completer The function to handle tab completion for this command node
    */
-  public void registerTabCompleter(String path, TabCompleteFunction completer) {
-    this.findTargetNode(path.split("\\s+"), true).node().setTabCompleter(completer);
+  public CommandTree registerTabCompleter(String path, TabCompleteFunction completer) {
+    this.findTargetNode(path.split("\\s+"), true).node()
+        .setTabCompleter(completer);
+
+    return this;
   }
 
   /**
@@ -115,16 +160,21 @@ public class CommandTree implements CommandExecutor, TabCompleter {
    * @param completer  The function to handle tab completion for this command node
    * @param permission The permission required to execute this command
    */
-  public void registerTabCompleter(String path, TabCompleteFunction completer, String permission) {
-    registerTabCompleter(path, completer);
+  public CommandTree registerTabCompleter(String path, TabCompleteFunction completer, String permission) {
+    return registerTabCompleter(path, completer);
   }
 
-  public void registerFromCommandWrapper(CommandWrapper commandWrapper) {
-    if (commandWrapper.isPlayerCommand())
-      registerPlayerCommand(commandWrapper.path(), commandWrapper.playerAction(), commandWrapper.permission());
-    else
-      registerCommand(commandWrapper.path(), commandWrapper.action(), commandWrapper.permission());
-    registerTabCompleter(commandWrapper.path(), commandWrapper.tabCompleter(), commandWrapper.permission());
+  /**
+   * Registers a command from a {@link CommandWrapper}.
+   * This is a convenience method for registering a command with the same path, action, and permission as the wrapper.
+   *
+   * @param command The command wrapper to register
+   */
+  public CommandTree registerFromCommandWrapper(@NotNull CommandWrapper command) {
+    registerCommand(command.path(), command.action(), command.permission(), command.isPlayerCommand());
+    registerTabCompleter(command.path(), command.tabCompleter(), command.permission());
+
+    return this;
   }
 
   /**
@@ -148,7 +198,7 @@ public class CommandTree implements CommandExecutor, TabCompleter {
     }
 
     if (args.length == 0) {
-      sender.sendMessage(usageMessage);
+      sender.sendMessage(usage);
       return true;
     }
 
@@ -198,7 +248,7 @@ public class CommandTree implements CommandExecutor, TabCompleter {
     String partial = result.remainingArgs.length > 0 ? result.remainingArgs[0] : "";
 
     // 5. Filter based on partial input
-    return filterCompletions(completions, partial);
+    return CommandUtils.filterCompletions(completions, partial);
   }
 
   /**
@@ -279,7 +329,7 @@ public class CommandTree implements CommandExecutor, TabCompleter {
   private boolean executeNode(CommandNode node, CommandContext context) {
     // Check action, if any
     if (!node.hasAction()) {
-      context.sender().sendMessage("Unknown subcommand. " + usageMessage);
+      context.sender().sendMessage("Unknown subcommand. " + usage);
       return true;
     }
     // Check permission, if any
@@ -301,28 +351,11 @@ public class CommandTree implements CommandExecutor, TabCompleter {
   }
 
   /**
-   * Functional interface for player-specific command actions
-   */
-  @FunctionalInterface
-  public interface PlayerCommandAction {
-    boolean execute(Player player, CommandContext context);
-  }
-
-  /**
    * Functional interface for custom tab completion logic.
    */
   @FunctionalInterface
   public interface TabCompleteFunction {
     List<String> complete(CommandContext context);
-  }
-
-  /**
-   * Functional interface for registering a batch of commands with their respective actions.
-   * @param <T> The type of the action to register
-   */
-  @FunctionalInterface
-  private interface BatchRegistrar<T> {
-    void register(String path, T action, String permission);
   }
 
   /**
@@ -391,29 +424,18 @@ public class CommandTree implements CommandExecutor, TabCompleter {
      *
      * @param actionToSet       The action to execute when this command node is reached
      * @param permissionToCheck The permission required to execute this action, or null if no permission is required
+     * @param isPlayerCommand   If true, this action will only be executed by players.
      */
     @Contract(mutates = "this")
-    private void setAction(CommandAction actionToSet, String permissionToCheck) {
-      this.action = actionToSet;
-      this.permission = permissionToCheck;
-    }
-
-    /**
-     * Sets the player-specific action for this command node with an optional permission.
-     * If the action is null, this node will not execute any action.
-     *
-     * @param playerAction      The action to execute when this command node is reached by a player
-     * @param permissionToCheck The permission required to execute this action, or null if no permission is required
-     */
-    @Contract(mutates = "this")
-    private void setPlayerAction(PlayerCommandAction playerAction, String permissionToCheck) {
-      this.action = context -> {
-        if (!context.isPlayer()) {
-          context.sender().sendMessage("This command can only be used by players.");
-          return true;
-        }
-        return playerAction.execute(context.getPlayer(), context);
-      };
+    private void setAction(CommandAction actionToSet, String permissionToCheck, boolean isPlayerCommand) {
+      this.action = isPlayerCommand ?
+                    context -> {
+                      if (!context.isPlayer()) {
+                        context.sender().sendMessage("This command can only be used by players.");
+                        return true;
+                      }
+                      return actionToSet.execute(context);
+                    } : actionToSet;
       this.permission = permissionToCheck;
     }
 
@@ -487,309 +509,5 @@ public class CommandTree implements CommandExecutor, TabCompleter {
     }
   }
 
-  /**
-   * Builder for creating a CommandTree instance
-   * <p>
-   * Usage:
-   * <pre>
-   * new CommandTree.Builder("plugin.base", "Usage: /plugin command [subcommands]")
-   *                   .command("command subcommand", context -> {
-   *                      // Handle command logic.
-   *                      return true;
-   *                   })
-   *                   .playerCommand("player command", (player, context) -> {
-   *                      // Handle player-specific command logic.
-   *                      return true;
-   *                   })
-   *                   .tabCompleter("command subcommand", context -> {
-   *                      // Provide custom tab completion logic.
-   *                      return List.of("option1", "option2");
-   *                   })
-   *                   .build();
-   * </pre>
-   */
-  public static class Builder {
-    /**
-     * The CommandTree instance being built
-     */
-    private final CommandTree tree;
-
-    /**
-     * Creates a new Builder for a CommandTree instance
-     */
-    public Builder() {
-      this.tree = new CommandTree();
-    }
-
-    /**
-     * Register the base permission for all commands registered with this Builder instance.
-     *
-     * @param basePermission The base permission string to check
-     * @return this Builder instance for chaining
-     */
-    public Builder basePermission(String basePermission) {
-      tree.basePermission = basePermission;
-      return this;
-    }
-
-    /**
-     * Sets the usage message for all commands registered with this Builder instance.
-     *
-     * @param usageMessage The usage message to display
-     * @return this Builder instance for chaining
-     */
-    public Builder usageMessage(String usageMessage) {
-      tree.usageMessage = usageMessage;
-      return this;
-    }
-
-    /**
-     * Registers a command with the specified path and action.
-     *
-     * @param path   The command path, e.g., "command subcommand"
-     * @param action The action to execute when the command is called
-     * @return this Builder instance for chaining
-     */
-    public Builder command(String path, CommandAction action) {
-      return command(path, action, null);
-    }
-
-    /**
-     * Registers a command with the specified path, action, and permission.
-     *
-     * @param path       The command path, e.g., "command subcommand"
-     * @param action     The action to execute when the command is called
-     * @param permission The permission required to execute this command
-     * @return this Builder instance for chaining
-     */
-    public Builder command(String path, CommandAction action, String permission) {
-      tree.registerCommand(path, action, permission);
-      return this;
-    }
-
-    /**
-     * Registers multiple commands with their respective actions.
-     *
-     * @param commands A map of command paths to their actions
-     * @return this Builder instance for chaining
-     */
-    public Builder commands(Map<String, CommandAction> commands) {
-      return commands(commands, null);
-    }
-
-    /**
-     * Registers multiple commands with their respective actions and a base permission.
-     *
-     * @param commands   A map of command paths to their actions
-     * @param permission The permission required to execute these commands
-     * @return this Builder instance for chaining
-     */
-    public Builder commands(Map<String, CommandAction> commands, String permission) {
-      return registerBatch(commands, permission, tree::registerCommand);
-    }
-
-    /**
-     * Registers a player-specific command with the specified path and action.
-     *
-     * @param path   The command path, e.g., "player command"
-     * @param action The action to execute when the command is called by a player
-     * @return this Builder instance for chaining
-     */
-    public Builder playerCommand(String path, PlayerCommandAction action) {
-      return playerCommand(path, action, null);
-    }
-
-    /**
-     * Registers a player-specific command with the specified path, action, and permission.
-     *
-     * @param path       The command path, e.g., "player command"
-     * @param action     The action to execute when the command is called by a player
-     * @param permission The permission required to execute this command
-     * @return this Builder instance for chaining
-     */
-    public Builder playerCommand(String path, PlayerCommandAction action, String permission) {
-      tree.registerPlayerCommand(path, action, permission);
-      return this;
-    }
-
-    /**
-     * Registers multiple player-specific commands with their respective actions.
-     *
-     * @param commands A map of command paths to their player-specific actions
-     * @return this Builder instance for chaining
-     */
-    public Builder playerCommands(Map<String, PlayerCommandAction> commands) {
-      return playerCommands(commands, null);
-    }
-
-    /**
-     * Registers multiple player-specific commands with their respective actions and a base permission.
-     *
-     * @param commands   A map of command paths to their player-specific actions
-     * @param permission The permission required to execute these commands
-     * @return this Builder instance for chaining
-     */
-    public Builder playerCommands(Map<String, PlayerCommandAction> commands, String permission) {
-      return registerBatch(commands, permission, tree::registerPlayerCommand);
-    }
-
-    /**
-     * Registers a custom tab completer for a command path.
-     *
-     * @param path      The command path, e.g., "command subcommand"
-     * @param completer The function to handle tab completion
-     * @return this Builder instance for chaining
-     */
-    public Builder tabCompleter(String path, TabCompleteFunction completer) {
-      tree.registerTabCompleter(path, completer);
-      return this;
-    }
-
-    /**
-     * Registers multiple custom tab completers for command paths.
-     *
-     * @param completers A map of command paths to their tab completion functions
-     * @return this Builder instance for chaining
-     */
-    public Builder tabCompleters(Map<String, TabCompleteFunction> completers) {
-      return registerBatch(completers, null, tree::registerTabCompleter);
-    }
-
-    /**
-     * Registers a command wrapper with the specified path and action.
-     * @param commandWrapper The command wrapper to register
-     * @return this Builder instance for chaining
-     */
-    public Builder fromCommandWrapper(CommandWrapper commandWrapper) {
-      if (commandWrapper.isPlayerCommand())
-        tree.registerPlayerCommand(commandWrapper.path(), commandWrapper.playerAction(), commandWrapper.permission());
-      else
-        tree.registerCommand(commandWrapper.path(), commandWrapper.action(), commandWrapper.permission());
-      tree.registerTabCompleter(commandWrapper.path(), commandWrapper.tabCompleter(), commandWrapper.permission());
-      return this;
-    }
-
-    /**
-     * Register a batch of commands with their respective actions.
-     * @param map        A map of command paths to their actions
-     * @param permission The permission required to execute these commands
-     * @param registrar  The registrar to use to register the commands
-     * @param <T>        The type of the action to register
-     * @return this Builder instance for chaining
-     */
-    private <T> Builder registerBatch(Map<String, T> map, String permission, BatchRegistrar<T> registrar) {
-      // No commands to register
-      if (map == null || map.isEmpty()) return this;
-      // Register each command
-      for (Map.Entry<String, T> entry : map.entrySet())
-        registrar.register(entry.getKey(), entry.getValue(), permission);
-      return this;
-    }
-
-    /**
-     * Builds the CommandTree instance with all registered commands and settings.
-     *
-     * @return The constructed CommandTree instance
-     */
-    public CommandTree build() {
-      // Validate that the base permission is set
-      if (tree.basePermission != null && tree.basePermission.isBlank())
-        throw new IllegalStateException("Base permission cannot be blank or empty");
-      // Validate that at least one command is registered
-      if (tree.rootNode.children.isEmpty())
-        throw new IllegalStateException("CommandTree must have at least one registered command");
-      // Return the CommandTree instance
-      return tree;
-    }
-  }
-
-  /**
-   * Utility method to filter a list of strings based on a partial match.
-   * This is used for command tab completion to filter possibilities.
-   *
-   * @param possibilities The list of possible completions
-   * @param partial       The partial string to match against
-   * @return A filtered list of strings that start with the given partial string
-   */
-  public static List<String> filterCompletions(List<String> possibilities, String partial) {
-    return possibilities.stream()
-                        .filter(s -> s.toLowerCase(DEFAULT_LOCALE)
-                                              .startsWith(partial.toLowerCase(DEFAULT_LOCALE)))
-                        .collect(Collectors.toList());
-  }
-
-  /**
-   * Utility method to get player completions for a specific argument index in the command context.
-   * This is used for tab completion to suggest online players based on the partial input.
-   *
-   * @param context        The command context
-   * @param playerArgIndex The index of the argument where player names are expected
-   * @return A list of player names that match the partial input
-   */
-  public static List<String> playerTabCompletions(CommandContext context, int playerArgIndex) {
-    // 1. Check if there are enough arguments to provide the player argument
-    if (context.remainingArgs().length <= playerArgIndex) {
-      String partial = context.remainingArgs().length > (playerArgIndex - 1) ?
-                               context.remainingArgs()[(playerArgIndex - 1)] :
-                               "";
-
-      return Bukkit.getOnlinePlayers().stream()
-                                      .map(Player::getName)
-                                      .filter(name -> name.toLowerCase(DEFAULT_LOCALE)
-                                                                  .startsWith(partial.toLowerCase(DEFAULT_LOCALE)))
-                                      .collect(Collectors.toList());
-    }
-    return List.of();
-  }
-
-  /**
-   * Utility method to get the target player from the command context.
-   * If no player is specified, it defaults to the command sender if they are a player.
-   * If the target player is not found or not online, it sends an error message.
-   *
-   * @param context        The command context
-   * @param playerArgIndex The index of the argument where the player name is expected (starting at 1)
-   * @return The target player or null if not found
-   */
-  @Nullable
-  public static Player getTargetPlayer(CommandContext context, int playerArgIndex, boolean implicitSender) {
-    // 1. Check if there are enough arguments to provide the player argument
-    if (context.remainingArgs().length >= playerArgIndex)
-      return Bukkit.getPlayer(context.remainingArgs()[playerArgIndex - 1]);
-    // 2. Check if the sender implicitly provides the player argument
-    if (context.isPlayer() && implicitSender) return context.getPlayer();
-    // 3. No arguments and console sender: return null
-    return null;
-  }
-
-  /**
-   * Asynchronously retrieves a target OfflinePlayer.
-   * <p>
-   * Priority:
-   * 1. If an argument exists at the index, look up that player (Async).
-   * 2. If no argument exists and the sender is a player, return sender (Sync).
-   * 3. Otherwise, return null.
-   *
-   * @param context        The command context
-   * @param playerArgIndex The index of the argument (starting at 1)
-   * @return A CompletableFuture containing the OfflinePlayer or null
-   */
-  public static CompletableFuture<OfflinePlayer> getTargetOfflinePlayerAsync(
-          CommandContext context,
-          int playerArgIndex,
-          boolean implicitSender
-  ) {
-    // 1. Check if the user provided a specific argument
-    if (context.remainingArgs().length >= playerArgIndex)
-      // Run the lookup on a separate thread to avoid blocking the main server tick
-      return CompletableFuture.supplyAsync(() -> {
-        // This method might trigger a web request to Mojang
-        return Bukkit.getOfflinePlayer(context.remainingArgs()[playerArgIndex - 1]);
-      });
-    // 2. Fallback: If no argument is provided, use the sender if they are a player
-    if (context.isPlayer() && implicitSender) { return CompletableFuture.completedFuture(context.getPlayer()); }
-    // 3. No argument and console sender: return null
-    return CompletableFuture.completedFuture(null);
-  }
 }
 
