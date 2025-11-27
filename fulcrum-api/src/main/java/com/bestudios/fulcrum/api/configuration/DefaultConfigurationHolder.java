@@ -132,7 +132,7 @@ public class DefaultConfigurationHolder implements ConfigurationHolder<YamlConfi
       config.save(file);
       return true;
     } catch (IOException e) {
-      plugin.getLogger().severe("Could not save config: " + getConfigName());
+      plugin.getLogger().severe("Could not save config: " + file.getName());
       return false;
     }
   }

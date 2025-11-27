@@ -5,8 +5,6 @@ import org.bukkit.event.Event;
 import org.bukkit.event.HandlerList;
 import org.jetbrains.annotations.NotNull;
 
-import java.sql.Time;
-
 /**
  * Event triggered when a timer update occurs in Fulcrum.
  * This event is fired by the TimerInfoUpdater when the elapsed time reaches a multiple of the update time.
@@ -16,7 +14,7 @@ import java.sql.Time;
  *
  * @author Bestialus
  * @version 1.0
- * @since 1.0
+ * @since   1.0
  * @see TimerInfo
  */
 public class TimerUpdateEvent extends Event {

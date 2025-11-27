@@ -140,14 +140,7 @@ public class DefaultCommandsRegistry implements CommandsRegistry<CommandTree, Co
       return false;
     }
 
-    try {
-      return populateTree(commandName, subcommands);
-
-    } catch (Exception e) {
-      plugin.getLogger().severe("Failed to build CommandTree for command '" + commandName + "': " + e.getMessage() +
-                                "\n" + Arrays.toString(e.getStackTrace()));
-      return false;
-    }
+    return populateTree(commandName, subcommands);
   }
 
   /**
@@ -157,12 +150,14 @@ public class DefaultCommandsRegistry implements CommandsRegistry<CommandTree, Co
    * @return true if the command was populated successfully, false otherwise.
    */
   private boolean populateTree(@NotNull String commandName, @NotNull Map<String, CommandWrapper> subcommands) {
-    CommandTree tree = getCommandHandler(commandName) != null ?
-                       // Use the existing tree
-                       getCommandHandler(commandName) :
-                       // Create a new tree
-                       new CommandTree(commandName.toLowerCase(CommandUtils.DEFAULT_LOCALE) + ".use",
-                                       "Usage: /" + commandName + " <subcommand>");
+    CommandTree tree = getCommandHandler(commandName) != null
+                     ? // Use the existing tree
+                       getCommandHandler(commandName)
+                     : // Create a new tree
+                       new CommandTree(
+                               commandName.toLowerCase(CommandUtils.DEFAULT_LOCALE) + ".use",
+                               "Usage: /" + commandName + " <subcommand>"
+                       );
     // Validate tree
     Objects.requireNonNull(tree, "CommandTree cannot be null");
     // Process each CommandWrapper and add to the tree

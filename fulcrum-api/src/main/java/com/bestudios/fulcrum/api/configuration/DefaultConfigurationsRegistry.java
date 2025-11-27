@@ -46,10 +46,10 @@ public class DefaultConfigurationsRegistry implements ConfigurationsRegistry<Yam
   /**
    * Constructs a new DefaultConfigurationsRegistry associated with the given plugin.
    *
-   * @param plugin the JavaPlugin instance this registry is associated with
+   * @param pluginRef the JavaPlugin instance this registry is associated with
    */
-  public DefaultConfigurationsRegistry(JavaPlugin plugin) {
-    this.plugin = plugin;
+  public DefaultConfigurationsRegistry(JavaPlugin pluginRef) {
+    this.plugin = pluginRef;
   }
 
   /**
