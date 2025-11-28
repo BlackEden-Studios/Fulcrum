@@ -4,11 +4,12 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
+import com.google.gson.JsonSyntaxException;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Abstract base class for all messages in the system.
@@ -24,18 +25,29 @@ import java.util.Map;
  */
 public abstract class Message {
 
+  /** Gson instance for serialization/deserialization */
   protected static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
-
-  protected final String messageType;
+  /** Type identifier for this message */
+  protected final String type;
+  /** Timestamp when this message was created */
   protected final long timestamp;
 
+  /**
+   * Constructor.
+   * @param messageType The message type string
+   */
   protected Message(@NotNull String messageType) {
     this(messageType, -1L);
   }
 
-  protected Message(@NotNull String messageType, long timestamp) {
-    this.messageType = messageType;
-    this.timestamp = timestamp > 0 ? timestamp : System.currentTimeMillis();
+  /**
+   * Constructor.
+   * @param messageType             The message type string
+   * @param timestampInMilliseconds The timestamp in milliseconds
+   */
+  protected Message(@NotNull String messageType, long timestampInMilliseconds) {
+    this.type = messageType;
+    this.timestamp = timestampInMilliseconds > 0 ? timestampInMilliseconds : System.currentTimeMillis();
   }
 
   /**
@@ -45,7 +57,7 @@ public abstract class Message {
    */
   @NotNull
   public String getMessageType() {
-    return messageType;
+    return type;
   }
 
   /**
@@ -64,8 +76,8 @@ public abstract class Message {
    */
   @NotNull
   public Map<String, String> toMap() {
-    Map<String, String> map = new HashMap<>();
-    map.put("messageType", messageType);
+    Map<String, String> map = new ConcurrentHashMap<>();
+    map.put("type", type);
     map.put("timestamp", String.valueOf(timestamp));
     serializeFields(map);
     return map;
@@ -106,20 +118,17 @@ public abstract class Message {
    */
   @Nullable
   public static Message fromMap(@Nullable Map<String, String> map) {
-    if (map == null || map.isEmpty()) {
-      return null;
-    }
-
-    String type = map.get("messageType");
-    if (type == null) {
-      return null;
-    }
+    // Empty map is invalid
+    if (map == null || map.isEmpty()) return null;
+    // Empty message type is invalid
+    String type = map.get("type");
+    if (type == null) return null;
 
     // Factory pattern for creating specific message types
     return switch (type) {
-      case TransferMessage.TYPE -> TransferMessage.fromMapInternal(map);
+      case TransferMessage.TYPE     -> TransferMessage.fromMapInternal(map);
       case NotificationMessage.TYPE -> NotificationMessage.fromMapInternal(map);
-      case DataSyncMessage.TYPE -> DataSyncMessage.fromMapInternal(map);
+      case DataSyncMessage.TYPE     -> DataSyncMessage.fromMapInternal(map);
       default -> null;
     };
   }
@@ -132,20 +141,19 @@ public abstract class Message {
    */
   @Nullable
   public static Message fromJson(@Nullable String json) {
-    if (json == null || json.isEmpty()) {
+    // Empty JSON is invalid
+    if (json == null || json.isEmpty()) return null;
+
+    try {
+      Map<String, String> map = new ConcurrentHashMap<>();
+      JsonObject jsonObject = JsonParser.parseString(json).getAsJsonObject();
+      jsonObject.entrySet().forEach(
+              entry -> map.put(entry.getKey(), entry.getValue().getAsString()));
+      return fromMap(map);
+    } catch (JsonSyntaxException e) {
       return null;
     }
 
-    try {
-      JsonObject jsonObject = JsonParser.parseString(json).getAsJsonObject();
-      Map<String, String> map = new HashMap<>();
-      jsonObject.entrySet().forEach(entry ->
-              map.put(entry.getKey(), entry.getValue().getAsString())
-      );
-      return fromMap(map);
-    } catch (Exception e) {
-      return null;
-    }
   }
 
   /**
@@ -156,9 +164,9 @@ public abstract class Message {
    */
   @Nullable
   public static Message fromBytes(byte[] bytes) {
-    if (bytes == null || bytes.length == 0) {
-      return null;
-    }
+    // Empty byte array is invalid
+    if (bytes == null || bytes.length == 0) return null;
+
     return fromJson(new String(bytes));
   }
 }

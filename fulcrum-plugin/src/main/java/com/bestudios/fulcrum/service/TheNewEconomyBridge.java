@@ -21,7 +21,7 @@ import java.util.UUID;
 
 /**
  * Bridge class to expose TheNewEconomy via VaultUnlocked API and Fulcrum Service API.
- * <p></p>
+ * <p>
  * Note: This class depends on VaultUnlocked being present and a TNE provider being registered with it.
  * This behavior is planned to change in future releases of Fulcrum.
  *
@@ -33,6 +33,7 @@ import java.util.UUID;
  */
 public class TheNewEconomyBridge implements EconomyService, Economy {
 
+  private static final String PROVIDER = "TheNewEconomy";
   /** The underlying VaultUnlocked Economy provider for TNE. */
   private final Economy vaultEconomy;
   /** The plugin instance registering this bridge. */
@@ -43,19 +44,17 @@ public class TheNewEconomyBridge implements EconomyService, Economy {
   /**
    * Constructs a new TheNewEconomyBridge.
    *
-   * @param plugin  The plugin instance registering this bridge.
-   * @param priority The service priority for this bridge.
+   * @param pluginRef       The plugin instance registering this bridge.
+   * @param servicePriority The service priority for this bridge.
    *
    * @throws IllegalStateException if no VaultUnlocked Economy provider is found.
    */
-  public TheNewEconomyBridge(Plugin plugin, ServicePriority priority) {
-    this.plugin = plugin;
-    this.priority = priority;
-    RegisteredServiceProvider<Economy> rsp =
-            Bukkit.getServicesManager().getRegistration(Economy.class);
+  public TheNewEconomyBridge(Plugin pluginRef, ServicePriority servicePriority) {
+    this.plugin = pluginRef;
+    this.priority = servicePriority;
 
-    if (rsp == null)
-      throw new IllegalStateException("No VaultUnlocked Economy provider found");
+    RegisteredServiceProvider<Economy> rsp = Bukkit.getServicesManager().getRegistration(Economy.class);
+    if (rsp == null) throw new IllegalStateException("No VaultUnlocked Economy provider found");
 
     this.vaultEconomy = rsp.getProvider();
   }
@@ -71,7 +70,7 @@ public class TheNewEconomyBridge implements EconomyService, Economy {
 
   @Override
   public String getPluginName() {
-    return "TheNewEconomy";
+    return PROVIDER;
   }
 
   @Override
@@ -150,192 +149,358 @@ public class TheNewEconomyBridge implements EconomyService, Economy {
   }
 
   @Override
-  public boolean createAccount(@NotNull UUID accountID, @NotNull String name) {
+  public boolean createAccount(
+          @NotNull UUID accountID,
+          @NotNull String name
+  ) {
     return this.vaultEconomy.createAccount(accountID, name);
   }
 
   @Override
-  public boolean createAccount(@NotNull UUID accountID, @NotNull String name, @NotNull String worldName) {
+  public boolean createAccount(
+          @NotNull UUID accountID,
+          @NotNull String name,
+          @NotNull String worldName
+  ) {
     return this.vaultEconomy.createAccount(accountID, name, worldName);
   }
 
   @Override
-  public boolean createAccount(@NotNull UUID accountID, @NotNull String name, @NotNull String worldName, boolean player) {
+  public boolean createAccount(
+          @NotNull UUID accountID,
+          @NotNull String name,
+          @NotNull String worldName,
+          boolean player
+  ) {
     return this.vaultEconomy.createAccount(accountID, name, worldName, player);
   }
 
   @Override
-  public boolean hasAccount(@NotNull UUID accountID, @NotNull String worldName) {
+  public boolean hasAccount(
+          @NotNull UUID accountID,
+          @NotNull String worldName
+  ) {
     return this.vaultEconomy.hasAccount(accountID, worldName);
   }
 
   @Override
-  public boolean renameAccount(@NotNull String plugin, @NotNull UUID accountID, @NotNull String name) {
-    return this.vaultEconomy.renameAccount(plugin, accountID, name);
+  public boolean renameAccount(
+          @NotNull String pluginName,
+          @NotNull UUID accountID,
+          @NotNull String name
+  ) {
+    return this.vaultEconomy.renameAccount(pluginName, accountID, name);
   }
 
   @Override
-  public boolean deleteAccount(@NotNull String plugin, @NotNull UUID accountID) {
-    return this.vaultEconomy.deleteAccount(plugin, accountID);
+  public boolean deleteAccount(
+          @NotNull String pluginName,
+          @NotNull UUID accountID
+  ) {
+    return this.vaultEconomy.deleteAccount(pluginName, accountID);
   }
 
   @Override
-  public boolean accountSupportsCurrency(@NotNull String plugin, @NotNull UUID accountID, @NotNull String currency) {
-    return this.vaultEconomy.accountSupportsCurrency(plugin, accountID, currency);
+  public boolean accountSupportsCurrency(
+          @NotNull String pluginName,
+          @NotNull UUID accountID,
+          @NotNull String currency
+  ) {
+    return this.vaultEconomy.accountSupportsCurrency(pluginName, accountID, currency);
   }
 
   @Override
-  public boolean accountSupportsCurrency(@NotNull String plugin, @NotNull UUID accountID, @NotNull String currency, @NotNull String world) {
-    return this.vaultEconomy.accountSupportsCurrency(plugin, accountID, currency, world);
+  public boolean accountSupportsCurrency(
+          @NotNull String pluginName,
+          @NotNull UUID accountID,
+          @NotNull String currency,
+          @NotNull String world
+  ) {
+    return this.vaultEconomy.accountSupportsCurrency(pluginName, accountID, currency, world);
   }
 
   @Override
-  public @NotNull BigDecimal getBalance(@NotNull String pluginName, @NotNull UUID accountID) {
+  public @NotNull BigDecimal getBalance(
+          @NotNull String pluginName,
+          @NotNull UUID accountID
+  ) {
     return this.vaultEconomy.balance(pluginName, accountID);
   }
 
   @Override
-  public @NotNull BigDecimal getBalance(@NotNull String pluginName, @NotNull UUID accountID, @NotNull String world) {
+  public @NotNull BigDecimal getBalance(
+          @NotNull String pluginName,
+          @NotNull UUID accountID,
+          @NotNull String world
+  ) {
     return this.vaultEconomy.balance(pluginName, accountID, world);
   }
 
   @Override
-  public @NotNull BigDecimal getBalance(@NotNull String pluginName, @NotNull UUID accountID, @NotNull String world, @NotNull String currency) {
+  public @NotNull BigDecimal getBalance(
+          @NotNull String pluginName,
+          @NotNull UUID accountID,
+          @NotNull String world,
+          @NotNull String currency
+  ) {
     return this.vaultEconomy.balance(pluginName, accountID, currency, world);
   }
 
   @Override
-  public @NotNull BigDecimal balance(@NotNull String pluginName, @NotNull UUID accountID) {
+  public @NotNull BigDecimal balance(
+          @NotNull String pluginName,
+          @NotNull UUID accountID
+  ) {
     return this.vaultEconomy.balance(pluginName, accountID);
   }
 
   @Override
-  public @NotNull BigDecimal balance(@NotNull String pluginName, @NotNull UUID accountID, @NotNull String world) {
+  public @NotNull BigDecimal balance(
+          @NotNull String pluginName,
+          @NotNull UUID accountID,
+          @NotNull String world
+  ) {
     return this.vaultEconomy.balance(pluginName, accountID, world);
   }
 
   @Override
-  public @NotNull BigDecimal balance(@NotNull String pluginName, @NotNull UUID accountID, @NotNull String world, @NotNull String currency) {
+  public @NotNull BigDecimal balance(
+          @NotNull String pluginName,
+          @NotNull UUID accountID,
+          @NotNull String world,
+          @NotNull String currency
+  ) {
     return this.vaultEconomy.balance(pluginName, accountID, world, currency);
   }
 
   @Override
-  public boolean has(@NotNull String pluginName, @NotNull UUID accountID, @NotNull BigDecimal amount) {
+  public boolean has(
+          @NotNull String pluginName,
+          @NotNull UUID accountID,
+          @NotNull BigDecimal amount
+  ) {
     return this.vaultEconomy.has(pluginName, accountID, amount);
   }
 
   @Override
-  public boolean has(@NotNull String pluginName, @NotNull UUID accountID, @NotNull String worldName, @NotNull BigDecimal amount) {
+  public boolean has(
+          @NotNull String pluginName,
+          @NotNull UUID accountID,
+          @NotNull String worldName,
+          @NotNull BigDecimal amount
+  ) {
     return this.vaultEconomy.has(pluginName, accountID, worldName, amount);
   }
 
   @Override
-  public boolean has(@NotNull String pluginName, @NotNull UUID accountID, @NotNull String worldName, @NotNull String currency, @NotNull BigDecimal amount) {
+  public boolean has(
+          @NotNull String pluginName,
+          @NotNull UUID accountID,
+          @NotNull String worldName,
+          @NotNull String currency,
+          @NotNull BigDecimal amount
+  ) {
     return this.vaultEconomy.has(pluginName, accountID, worldName, currency, amount);
   }
 
   @Override
-  public EconomyResponse set(@NotNull String pluginName, @NotNull UUID accountID, @NotNull BigDecimal amount) {
+  public EconomyResponse set(
+          @NotNull String pluginName,
+          @NotNull UUID accountID,
+          @NotNull BigDecimal amount
+  ) {
     return this.vaultEconomy.set(pluginName, accountID, amount);
   }
 
   @Override
-  public EconomyResponse set(@NotNull String pluginName, @NotNull UUID accountID, @NotNull String worldName, @NotNull BigDecimal amount) {
+  public EconomyResponse set(
+          @NotNull String pluginName,
+          @NotNull UUID accountID,
+          @NotNull String worldName,
+          @NotNull BigDecimal amount
+  ) {
     return this.vaultEconomy.set(pluginName, accountID, worldName, amount);
   }
 
   @Override
-  public EconomyResponse set(@NotNull String pluginName, @NotNull UUID accountID, @NotNull String worldName, @NotNull String currency, @NotNull BigDecimal amount) {
+  public EconomyResponse set(
+          @NotNull String pluginName,
+          @NotNull UUID accountID,
+          @NotNull String worldName,
+          @NotNull String currency,
+          @NotNull BigDecimal amount
+  ) {
     return this.vaultEconomy.set(pluginName, accountID, worldName, currency, amount);
   }
 
   @Override
-  public @NotNull EconomyResponse withdraw(@NotNull String pluginName, @NotNull UUID accountID, @NotNull BigDecimal amount) {
+  public @NotNull EconomyResponse withdraw(
+          @NotNull String pluginName,
+          @NotNull UUID accountID,
+          @NotNull BigDecimal amount
+  ) {
     return this.vaultEconomy.withdraw(pluginName, accountID, amount);
   }
 
   @Override
-  public @NotNull EconomyResponse withdraw(@NotNull String pluginName, @NotNull UUID accountID, @NotNull String worldName, @NotNull BigDecimal amount) {
+  public @NotNull EconomyResponse withdraw(
+          @NotNull String pluginName,
+          @NotNull UUID accountID,
+          @NotNull String worldName,
+          @NotNull BigDecimal amount
+  ) {
     return this.vaultEconomy.withdraw(pluginName, accountID, worldName, amount);
   }
 
   @Override
-  public @NotNull EconomyResponse withdraw(@NotNull String pluginName, @NotNull UUID accountID, @NotNull String worldName, @NotNull String currency, @NotNull BigDecimal amount) {
+  public @NotNull EconomyResponse withdraw(
+          @NotNull String pluginName,
+          @NotNull UUID accountID,
+          @NotNull String worldName,
+          @NotNull String currency,
+          @NotNull BigDecimal amount
+  ) {
     return this.vaultEconomy.withdraw(pluginName, accountID, worldName, currency, amount);
   }
 
   @Override
-  public @NotNull EconomyResponse deposit(@NotNull String pluginName, @NotNull UUID accountID, @NotNull BigDecimal amount) {
+  public @NotNull EconomyResponse deposit(
+          @NotNull String pluginName,
+          @NotNull UUID accountID,
+          @NotNull BigDecimal amount
+  ) {
     return this.vaultEconomy.deposit(pluginName, accountID, amount);
   }
 
   @Override
-  public @NotNull EconomyResponse deposit(@NotNull String pluginName, @NotNull UUID accountID, @NotNull String worldName, @NotNull BigDecimal amount) {
+  public @NotNull EconomyResponse deposit(
+          @NotNull String pluginName,
+          @NotNull UUID accountID,
+          @NotNull String worldName,
+          @NotNull BigDecimal amount
+  ) {
     return this.vaultEconomy.deposit(pluginName, accountID, worldName, amount);
   }
 
   @Override
-  public @NotNull EconomyResponse deposit(@NotNull String pluginName, @NotNull UUID accountID, @NotNull String worldName, @NotNull String currency, @NotNull BigDecimal amount) {
+  public @NotNull EconomyResponse deposit(
+          @NotNull String pluginName,
+          @NotNull UUID accountID,
+          @NotNull String worldName,
+          @NotNull String currency,
+          @NotNull BigDecimal amount
+  ) {
     return this.vaultEconomy.deposit(pluginName, accountID, worldName, currency, amount);
   }
 
   @Override
-  public boolean createSharedAccount(@NotNull String pluginName, @NotNull UUID accountID, @NotNull String name, @NotNull UUID owner) {
+  public boolean createSharedAccount(
+          @NotNull String pluginName,
+          @NotNull UUID accountID,
+          @NotNull String name,
+          @NotNull UUID owner
+  ) {
     return this.vaultEconomy.createSharedAccount(pluginName, accountID, name, owner);
   }
 
   @Override
-  public List<String> accountsOwnedBy(@NotNull String pluginName, @NotNull UUID accountID) {
+  public List<String> accountsOwnedBy(
+          @NotNull String pluginName,
+          @NotNull UUID accountID
+  ) {
     return this.vaultEconomy.accountsOwnedBy(pluginName, accountID);
   }
 
   @Override
-  public List<String> accountsMemberOf(@NotNull String pluginName, @NotNull UUID accountID) {
+  public List<String> accountsMemberOf(
+          @NotNull String pluginName,
+          @NotNull UUID accountID
+  ) {
     return this.vaultEconomy.accountsMemberOf(pluginName, accountID);
   }
 
   @Override
-  public List<String> accountsAccessTo(@NotNull String pluginName, @NotNull UUID accountID, @NotNull AccountPermission... permissions) {
+  public List<String> accountsAccessTo(
+          @NotNull String pluginName,
+          @NotNull UUID accountID,
+          @NotNull AccountPermission... permissions
+  ) {
     return this.vaultEconomy.accountsAccessTo(pluginName, accountID, permissions);
   }
 
   @Override
-  public boolean isAccountOwner(@NotNull String pluginName, @NotNull UUID accountID, @NotNull UUID uuid) {
+  public boolean isAccountOwner(
+          @NotNull String pluginName,
+          @NotNull UUID accountID,
+          @NotNull UUID uuid
+  ) {
     return this.vaultEconomy.isAccountOwner(pluginName, accountID, uuid);
   }
 
   @Override
-  public boolean setOwner(@NotNull String pluginName, @NotNull UUID accountID, @NotNull UUID uuid) {
+  public boolean setOwner(
+          @NotNull String pluginName,
+          @NotNull UUID accountID,
+          @NotNull UUID uuid
+  ) {
     return this.vaultEconomy.setOwner(pluginName, accountID, uuid);
   }
 
   @Override
-  public boolean isAccountMember(@NotNull String pluginName, @NotNull UUID accountID, @NotNull UUID uuid) {
-    return this.vaultEconomy.isAccountOwner(pluginName, accountID, uuid);
-  }
-
-  @Override
-  public boolean addAccountMember(@NotNull String pluginName, @NotNull UUID accountID, @NotNull UUID uuid) {
-    return this.vaultEconomy.isAccountOwner(pluginName, accountID, uuid);
-  }
-
-  @Override
-  public boolean addAccountMember(@NotNull String pluginName, @NotNull UUID accountID, @NotNull UUID uuid, @NotNull AccountPermission... initialPermissions) {
+  public boolean isAccountMember(
+          @NotNull String pluginName,
+          @NotNull UUID accountID,
+          @NotNull UUID uuid
+  ) {
     return this.vaultEconomy.isAccountMember(pluginName, accountID, uuid);
   }
 
   @Override
-  public boolean removeAccountMember(@NotNull String pluginName, @NotNull UUID accountID, @NotNull UUID uuid) {
-    return this.vaultEconomy.isAccountOwner(pluginName, accountID, uuid);
+  public boolean addAccountMember(
+          @NotNull String pluginName,
+          @NotNull UUID accountID,
+          @NotNull UUID uuid
+  ) {
+    return this.vaultEconomy.addAccountMember(pluginName, accountID, uuid);
   }
 
   @Override
-  public boolean hasAccountPermission(@NotNull String pluginName, @NotNull UUID accountID, @NotNull UUID uuid, @NotNull AccountPermission permission) {
+  public boolean addAccountMember(
+          @NotNull String pluginName,
+          @NotNull UUID accountID,
+          @NotNull UUID uuid,
+          @NotNull AccountPermission... initialPermissions
+  ) {
+    return this.vaultEconomy.addAccountMember(pluginName, accountID, uuid, initialPermissions);
+  }
+
+  @Override
+  public boolean removeAccountMember(
+          @NotNull String pluginName,
+          @NotNull UUID accountID,
+          @NotNull UUID uuid
+  ) {
+    return this.vaultEconomy.removeAccountMember(pluginName, accountID, uuid);
+  }
+
+  @Override
+  public boolean hasAccountPermission(
+          @NotNull String pluginName,
+          @NotNull UUID accountID,
+          @NotNull UUID uuid,
+          @NotNull AccountPermission permission
+  ) {
     return this.vaultEconomy.hasAccountPermission(pluginName, accountID, uuid, permission);
   }
 
   @Override
-  public boolean updateAccountPermission(@NotNull String pluginName, @NotNull UUID accountID, @NotNull UUID uuid, @NotNull AccountPermission permission, boolean value) {
+  public boolean updateAccountPermission(
+          @NotNull String pluginName,
+          @NotNull UUID accountID,
+          @NotNull UUID uuid,
+          @NotNull AccountPermission permission,
+          boolean value
+  ) {
     return this.vaultEconomy.updateAccountPermission(pluginName, accountID, uuid, permission, value);
   }
 
@@ -439,18 +604,34 @@ public class TheNewEconomyBridge implements EconomyService, Economy {
   }
 
   @Override
-  public boolean has(@NotNull UUID accountID, @NotNull String currency, @NotNull BigDecimal amount) {
+  public boolean has(
+          @NotNull UUID accountID,
+          @NotNull String currency,
+          @NotNull BigDecimal amount
+  ) {
     return this.vaultEconomy.has(this.getPluginName(), accountID, currency, amount);
   }
 
   @Override
-  public com.bestudios.fulcrum.api.service.economy.EconomyResponse withdraw(@NotNull UUID accountID, @NotNull BigDecimal amount, @NotNull String currency) {
-    return new com.bestudios.fulcrum.api.service.economy.EconomyResponse(this.vaultEconomy.withdraw(this.getPluginName(), accountID, currency, amount));
+  public @NotNull com.bestudios.fulcrum.api.service.economy.EconomyResponse withdraw(
+          @NotNull UUID accountID,
+          @NotNull BigDecimal amount,
+          @NotNull String currency
+  ) {
+    return new com.bestudios.fulcrum.api.service.economy.EconomyResponse(
+            this.vaultEconomy.withdraw(this.getPluginName(), accountID, currency, amount)
+    );
   }
 
   @Override
-  public com.bestudios.fulcrum.api.service.economy.EconomyResponse deposit(@NotNull UUID accountID, @NotNull BigDecimal amount, @NotNull String currency) {
-    return new com.bestudios.fulcrum.api.service.economy.EconomyResponse(this.vaultEconomy.deposit(this.getPluginName(), accountID, currency, amount));
+  public @NotNull com.bestudios.fulcrum.api.service.economy.EconomyResponse deposit(
+          @NotNull UUID accountID,
+          @NotNull BigDecimal amount,
+          @NotNull String currency
+  ) {
+    return new com.bestudios.fulcrum.api.service.economy.EconomyResponse(
+            this.vaultEconomy.deposit(this.getPluginName(), accountID, currency, amount)
+    );
   }
 
   @Override
@@ -479,7 +660,11 @@ public class TheNewEconomyBridge implements EconomyService, Economy {
   }
 
   @Override
-  public boolean addAccountMember(@NotNull UUID accountID, @NotNull UUID uuid, @NotNull EconomyPermission... initialPermissions) {
+  public boolean addAccountMember(
+          @NotNull UUID accountID,
+          @NotNull UUID uuid,
+          @NotNull EconomyPermission... initialPermissions
+  ) {
     AccountPermission[] perms = new AccountPermission[initialPermissions.length];
     for (int i = 0; i < initialPermissions.length; i++)
       perms[i] = PermissionConverter.convert(initialPermissions[i]);
@@ -487,18 +672,32 @@ public class TheNewEconomyBridge implements EconomyService, Economy {
   }
 
   @Override
-  public boolean removeAccountMember(@NotNull UUID accountID, @NotNull UUID uuid) {
+  public boolean removeAccountMember(
+          @NotNull UUID accountID,
+          @NotNull UUID uuid
+  ) {
     return this.vaultEconomy.removeAccountMember(this.getPluginName(), accountID, uuid);
   }
 
   @Override
-  public boolean hasAccountPermission(@NotNull UUID accountID, @NotNull UUID uuid, @NotNull EconomyPermission permission) {
-    return this.vaultEconomy.hasAccountPermission(getPluginName(), accountID, uuid, PermissionConverter.convert(permission));
+  public boolean hasAccountPermission(
+          @NotNull UUID accountID,
+          @NotNull UUID uuid,
+          @NotNull EconomyPermission permission
+  ) {
+    return this.vaultEconomy
+       .hasAccountPermission(getPluginName(), accountID, uuid, PermissionConverter.convert(permission));
   }
 
   @Override
-  public boolean updateAccountPermission(@NotNull UUID accountID, @NotNull UUID uuid, @NotNull EconomyPermission permission, boolean value) {
-    return this.vaultEconomy.updateAccountPermission(getPluginName(), accountID, uuid, PermissionConverter.convert(permission), value);
+  public boolean updateAccountPermission(
+          @NotNull UUID accountID,
+          @NotNull UUID uuid,
+          @NotNull EconomyPermission permission,
+          boolean value
+  ) {
+    return this.vaultEconomy
+       .updateAccountPermission(getPluginName(), accountID, uuid, PermissionConverter.convert(permission), value);
   }
 
 }

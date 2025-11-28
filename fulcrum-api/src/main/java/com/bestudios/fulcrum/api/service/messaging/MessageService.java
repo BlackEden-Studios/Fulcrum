@@ -1,9 +1,11 @@
 package com.bestudios.fulcrum.api.service.messaging;
 
 import com.bestudios.fulcrum.api.service.Service;
+import com.bestudios.fulcrum.api.util.Utils;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.List;
+import java.util.Objects;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 
@@ -98,4 +100,14 @@ public interface MessageService extends Service {
    */
   @NotNull
   CompletableFuture<Boolean> clearAllMessages(@NotNull UUID playerUUID);
+
+  /**
+   * Checks if the input is valid.
+   * @param channel    Channel name
+   * @param playerUUID Player UUID
+   */
+  default void checkInput(@NotNull String channel, @NotNull UUID playerUUID) {
+    Objects.requireNonNull(channel,    Utils.messageRequireNonNull("channel"));
+    Objects.requireNonNull(playerUUID, Utils.messageRequireNonNull("player UUID"));
+  }
 }

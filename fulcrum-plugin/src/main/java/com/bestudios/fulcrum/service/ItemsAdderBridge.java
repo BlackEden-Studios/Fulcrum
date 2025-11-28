@@ -40,29 +40,27 @@ public class ItemsAdderBridge implements CustomItemsService {
   /** Whether the integration is enabled */
   private boolean enabled;
   /** The name of the plugin */
-  private final String pluginName = "ItemsAdder";
-  /** The version of the plugin */
-  private final String pluginVersion;
+  private static final String PROVIDER = "ItemsAdder";
 
   /**
    * Constructor for the ItemsAdderBridge.
    *
-   * @param plugin   The plugin instance
-   * @param priority The service priority for this integration
+   * @param pluginRef The plugin instance
+   * @param servicePriority  The service priority for this integration
    */
-  public ItemsAdderBridge(Plugin plugin, ServicePriority priority) {
-    this.plugin = plugin;
-    this.priority = priority;
-    this.pluginVersion = plugin.getServer().getPluginManager().getPlugin("ItemsAdder").getDescription().getVersion();
+  public ItemsAdderBridge(Plugin pluginRef, ServicePriority servicePriority) {
+    this.plugin = pluginRef;
+    this.priority = servicePriority;
     this.enabled = false;
     // Register event listener for ItemsAdder load event
-    plugin.getServer().getPluginManager().registerEvents(new Listener() {
+    pluginRef.getServer().getPluginManager().registerEvents(new Listener() {
       @EventHandler
       public void onItemsAdderLoad(ItemsAdderLoadDataEvent event) {
         enabled = true;
+        plugin.getLogger().info("Successfully registered " + PROVIDER + " integration!");
         // Placeholder for event handling logic
       }
-    }, plugin);
+    }, pluginRef);
   }
 
   /**
@@ -236,7 +234,7 @@ public class ItemsAdderBridge implements CustomItemsService {
 
   @Override
   public String getPluginName() {
-    return "ItemsAdder";
+    return PROVIDER;
   }
 
   @Override
@@ -246,6 +244,6 @@ public class ItemsAdderBridge implements CustomItemsService {
 
   @Override
   public String getPluginVersion() {
-    return this.pluginVersion;
+    return this.plugin.getServer().getPluginManager().getPlugin(PROVIDER).getDescription().getVersion();
   }
 }

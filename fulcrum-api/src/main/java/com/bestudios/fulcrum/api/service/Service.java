@@ -19,6 +19,7 @@ public interface Service {
    * @return the service priority
    */
   ServicePriority getPriority();
+
   /**
    * Gets the name of the plugin this facade integrates with.
    * @return the plugin name (e.g., "Vault", "LuckPerms")

@@ -7,7 +7,6 @@ import java.util.Optional;
  * <p>
  * This interface defines methods for registering and retrieving integration services.
  * Implementations should provide thread-safe access to the services.
- * </p>
  *
  * @author Bestialus
  * @version 1.0

@@ -9,6 +9,7 @@ import me.angeschossen.lands.api.LandsIntegration;
 import me.angeschossen.lands.api.events.LandTrustPlayerEvent;
 import me.angeschossen.lands.api.events.LandUntrustPlayerEvent;
 import me.angeschossen.lands.api.flags.type.Flags;
+import me.angeschossen.lands.api.flags.type.RoleFlag;
 import me.angeschossen.lands.api.land.Area;
 import me.angeschossen.lands.api.land.Land;
 import me.angeschossen.lands.api.land.LandWorld;
@@ -38,6 +39,7 @@ import java.util.UUID;
  */
 public class LandsBridge implements ClaimsService, TeamsService {
 
+  public static final String PROVIDER = "Lands";
   /** The plugin instance */
   private final Plugin plugin;
   /** The service priority for this integration */
@@ -52,46 +54,25 @@ public class LandsBridge implements ClaimsService, TeamsService {
   /**
    * Constructor for the LandsBridge.
    *
-   * @param plugin   The plugin instance
-   * @param priority The service priority for this integration
+   * @param pluginRef       The plugin instance
+   * @param servicePriority The service priority for this integration
    * @throws IllegalStateException if the Lands plugin is not found or not enabled
    */
-  public LandsBridge(Plugin plugin, ServicePriority priority) {
-    this.plugin = plugin;
-    this.priority = priority;
-    World world = plugin.getServer().getWorld("world");
-    if (world == null)
-      throw new IllegalStateException("World 'world' not found");
-    if (!plugin.getServer().getPluginManager().isPluginEnabled("Lands"))
-      throw new IllegalStateException("Lands plugin is not enabled");
-    this.api = LandsIntegration.of(plugin);
-    this.world = this.api.getWorld(world);
-    if (this.world == null)
-      throw new IllegalStateException("Lands is not enabled for world 'world'");
-    // Initialize the land cache
-    this.landCache = new SessionCache<>(plugin, new LandDataSaver(), new LandDataLoader());
+  public LandsBridge(Plugin pluginRef, ServicePriority servicePriority) {
+    // Check if the Lands plugin is found and enabled
+    World bukkitWorld = pluginRef.getServer().getWorld("world");
+    if (bukkitWorld == null) throw new IllegalStateException("World 'world' not found");
+    if (!pluginRef.getServer().getPluginManager().isPluginEnabled(PROVIDER))
+      throw new IllegalStateException(PROVIDER + " plugin is not enabled");
+    // Initialize instance variables
+    this.plugin = pluginRef;
+    this.priority = servicePriority;
+    this.api = LandsIntegration.of(pluginRef);
+    this.world = this.api.getWorld(bukkitWorld);
+    if (this.world == null) throw new IllegalStateException(PROVIDER + " is not enabled for world 'world'");
+    this.landCache = new SessionCache<>(pluginRef, new LandDataSaver(), new LandDataLoader());
     // Register event listeners to keep the cache updated
-    plugin.getServer().getPluginManager().registerEvents(new CacheListener(), plugin);
-  }
-
-  @Override
-  public ServicePriority getPriority() {
-    return priority;
-  }
-
-  @Override
-  public String getPluginName() {
-    return "Lands";
-  }
-
-  @Override
-  public boolean isAvailable() {
-    return true;
-  }
-
-  @Override
-  public String getPluginVersion() {
-    return Objects.requireNonNull(this.plugin.getServer().getPluginManager().getPlugin("Lands")).getPluginMeta().getVersion();
+    pluginRef.getServer().getPluginManager().registerEvents(new CacheListener(), pluginRef);
   }
 
   /*
@@ -104,38 +85,34 @@ public class LandsBridge implements ClaimsService, TeamsService {
   }
 
   @Override
-  public boolean isLocationClaimed(@NotNull final Location location) {
+  public boolean isLocationClaimed(@NotNull Location location) {
     if (world.getLandByChunk(location.getBlockX(), location.getBlockZ()) != null) return true;
     return world.getLandByUnloadedChunk(location.getBlockX(), location.getBlockZ()) != null;
   }
 
   @Override
-  public int getDomainLevel(@NotNull final Location homeBlock) {
+  public int getDomainLevel(@NotNull Location homeBlock) {
     if (!supportsLevels()) return 0;
+    // Check if the location is in a loaded chunk
     Land land = world.getLandByChunk(homeBlock.getBlockX(), homeBlock.getBlockZ());
-    if (land != null) land.getLevel().getPosition();
+    if (land != null) return land.getLevel().getPosition();
+    // Check if the location is in an unloaded chunk
     Land unloadedLand = world.getLandByUnloadedChunk(homeBlock.getBlockX(), homeBlock.getBlockZ());
     return unloadedLand != null ? unloadedLand.getLevel().getPosition() : 0;
   }
 
   @Override
-  public boolean canBuildAt(@NotNull final Location location, @NotNull final UUID playerID) {
-    Area area = world.getArea(location.getBlockX(), location.getBlockY(), location.getBlockZ());
-    if (area == null)
-      return true; // Wilderness
-    return area.hasRoleFlag(playerID, Flags.BLOCK_PLACE);
+  public boolean canBuildAt(@NotNull Location location, @NotNull UUID playerID) {
+    return checkAreaFlag(location, playerID, Flags.BLOCK_PLACE);
   }
 
   @Override
-  public boolean canBreakAt(@NotNull final Location location, @NotNull final UUID playerID) {
-    Area area = world.getArea(location.getBlockX(), location.getBlockY(), location.getBlockZ());
-    if (area == null)
-      return true; // Wilderness
-    return area.hasRoleFlag(playerID, Flags.BLOCK_BREAK);
+  public boolean canBreakAt(@NotNull Location location, @NotNull UUID playerID) {
+    return checkAreaFlag(location, playerID, Flags.BLOCK_BREAK);
   }
 
   @Override
-  public boolean canPVPAt(@NotNull final Location location, @NotNull final UUID attackerID, @NotNull final UUID targetID) {
+  public boolean canPVPAt(@NotNull Location location, @NotNull UUID attackerID, @NotNull UUID targetID) {
     return api.canPvP(Objects.requireNonNull(Bukkit.getPlayer(attackerID)),
                       Objects.requireNonNull(Bukkit.getPlayer(targetID)),
                       location,
@@ -144,37 +121,79 @@ public class LandsBridge implements ClaimsService, TeamsService {
     );
   }
 
+  /**
+   * Checks if a player has a flag in an area.
+   * @param location The location to check.
+   * @param playerID The player to check.
+   * @param flag     The flag to check for.
+   * @return True if the player has the flag, false otherwise.
+   */
+  private boolean checkAreaFlag(Location location, UUID playerID, RoleFlag flag) {
+    Area area = world.getArea(location.getBlockX(), location.getBlockY(), location.getBlockZ());
+    if (area == null) return true; // Wilderness
+    return area.hasRoleFlag(playerID, flag);
+  }
+
   /*
    * TeamsService methods
    */
+
   @Override
-  public @Nullable String getTeamName(@NotNull final UUID teamID) {
+  public @Nullable String getTeamName(@NotNull UUID teamID) {
     return "";
   }
 
   @Override
-  public @NotNull final UUID getUniqueId(@NotNull String teamName) {
+  public @NotNull UUID getUniqueId(@NotNull String teamName) {
     return Objects.requireNonNull(api.getLandByName(teamName)).getOwnerUID();
   }
 
   @Override
-  public boolean addPlayer(@NotNull final UUID teamID, @NotNull final UUID playerID) {
+  public boolean addPlayer(@NotNull UUID teamID, @NotNull UUID playerID) {
     return false;
   }
 
   @Override
-  public boolean removePlayer(@NotNull final UUID teamID, @NotNull final UUID playerID) {
+  public boolean removePlayer(@NotNull UUID teamID, @NotNull UUID playerID) {
     return false;
   }
 
   @Override
-  public boolean hasPlayer(@NotNull final UUID teamID, @NotNull final UUID playerID) {
+  public boolean hasPlayer(@NotNull UUID teamID, @NotNull UUID playerID) {
     return false;
   }
 
   @Override
-  public boolean areAllies(@NotNull final UUID playerOne, @NotNull final UUID playerTwo) {
+  public boolean areAllies(@NotNull UUID playerOne, @NotNull UUID playerTwo) {
+    var land1 = landCache.get(playerOne);
+    var land2 = landCache.get(playerTwo);
+    if (land1 == null || land2 == null) return false;
     return landCache.get(playerOne).getULID().equals(landCache.get(playerTwo).getULID());
+  }
+
+  /*
+   * Service interface methods
+   */
+
+  @Override
+  public ServicePriority getPriority() {
+    return priority;
+  }
+
+  @Override
+  public String getPluginName() {
+    return PROVIDER;
+  }
+
+  @Override
+  public boolean isAvailable() {
+    return true;
+  }
+
+  @Override
+  public String getPluginVersion() {
+    return Objects.requireNonNull(this.plugin.getServer().getPluginManager().getPlugin(PROVIDER)).getPluginMeta()
+                  .getVersion();
   }
 
   /**
@@ -184,7 +203,7 @@ public class LandsBridge implements ClaimsService, TeamsService {
   private final class LandDataLoader implements PlayerDataLoader<Land> {
 
     @Override
-    public Land load(UUID playerID) {
+    public @Nullable Land load(UUID playerID) {
       LandPlayer landPlayer = api.getLandPlayer(playerID);
       if (landPlayer.getLands().isEmpty()) return null;
       // For simplicity, return the first land the player owns
@@ -207,16 +226,17 @@ public class LandsBridge implements ClaimsService, TeamsService {
   /**
    * Listener to update the land cache on player land trust/untrust events.
    */
-  public class CacheListener implements Listener {
-    // Private constructor to prevent instantiation
-    private CacheListener() {}
+  private class CacheListener implements Listener {
+
     // Handler for when a player joins a land
     @EventHandler
     public void onPlayerLandJoin(LandTrustPlayerEvent event) {
       assert event.getLandPlayer() != null;
       landCache.put(event.getLandPlayer().getPlayer().getUniqueId(), event.getLand());
     }
+
     // Handler for when a player leaves a land
+    @EventHandler
     public void onPlayerLandLeave(LandUntrustPlayerEvent event) {
       if (event.getArea() != null) return; // Ignore if the event is for an area, not a land
       assert event.getLandPlayer() != null;

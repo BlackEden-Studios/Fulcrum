@@ -10,7 +10,6 @@ import com.bestudios.fulcrum.api.service.economy.EconomyService;
 import com.bestudios.fulcrum.api.service.messaging.MessageService;
 import com.bestudios.fulcrum.api.service.permission.PermissionsService;
 import com.bestudios.fulcrum.api.service.team.TeamsService;
-import net.luckperms.api.messaging.MessagingService;
 import org.bukkit.plugin.RegisteredServiceProvider;
 import org.bukkit.plugin.ServicePriority;
 
@@ -27,24 +26,22 @@ import java.util.Optional;
  * @see Service
  */
 public final class FulcrumServicesRegistry implements ServicesRegistry {
+
+  /** The plugin instance */
   private final FulcrumPlugin plugin;
 
   /**
    * Constructs a new FulcrumServicesRegistry with the given Fulcrum plugin instance.
-   * @param plugin the Fulcrum plugin instance
+   * @param pluginRef the Fulcrum plugin instance
    */
-  public FulcrumServicesRegistry(Fulcrum plugin) {
-    this.plugin = plugin;
+  public FulcrumServicesRegistry(Fulcrum pluginRef) {
+    this.plugin = pluginRef;
   }
 
   @Override
   public <T extends Service> boolean registerService(Class<T> serviceClass, T service) {
-    try {
-      this.plugin.getServer().getServicesManager().register(serviceClass, service, this.plugin, service.getPriority());
-      return true;
-    } catch (Exception e) {
-      return false;
-    }
+    this.plugin.getServer().getServicesManager().register(serviceClass, service, this.plugin, service.getPriority());
+    return true;
   }
 
   @Override
@@ -69,7 +66,10 @@ public final class FulcrumServicesRegistry implements ServicesRegistry {
     // Custom items
     this.registerService(CustomItemsService.class, new ItemsAdderBridge(this.plugin, ServicePriority.Highest));
     // Messaging
-    this.registerService(MessageService.class, new FulcrumMessageService(this.plugin, ServicePriority.Highest, plugin.getDatabaseGateway()));
+    this.registerService(
+            MessageService.class,
+            new FulcrumMessageService(this.plugin, ServicePriority.Highest, plugin.getDatabaseGateway())
+    );
   }
 
 }
