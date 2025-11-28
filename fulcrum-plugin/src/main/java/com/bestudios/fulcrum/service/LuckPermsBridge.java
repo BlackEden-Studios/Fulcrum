@@ -45,14 +45,15 @@ public class LuckPermsBridge implements PermissionsService {
   /**
    * Constructor for LuckPermsBridge.
    *
-   * @param plugin   The plugin instance
-   * @param priority The service priority
+   * @param pluginRef       The plugin instance
+   * @param servicePriority The service priority
    */
-  public LuckPermsBridge(Plugin plugin, ServicePriority priority) {
-    this.plugin = plugin;
-    this.priority = priority;
+  public LuckPermsBridge(Plugin pluginRef, ServicePriority servicePriority) {
+    this.plugin = pluginRef;
+    this.priority = servicePriority;
     var provider = Bukkit.getServicesManager().getRegistration(LuckPerms.class);
-    this.api = (provider != null) ? provider.getProvider() : null;
+    if (provider == null) throw new IllegalStateException("No LuckPerms provider found");
+    this.api = provider.getProvider();
   }
 
   /**
@@ -62,7 +63,7 @@ public class LuckPermsBridge implements PermissionsService {
    * @param action   The action to perform with the User
    * @return A CompletableFuture containing the result of the action
    */
-  private CompletableFuture<Boolean> with(@NotNull final UUID uniqueId, @NotNull final Function<User, Boolean> action) {
+  private CompletableFuture<Boolean> with(@NotNull UUID uniqueId, @NotNull Function<User, Boolean> action) {
     return CompletableFuture.supplyAsync(() -> {
       // If the user is not loaded, load it async
       if (!api.getUserManager().isLoaded(uniqueId))
@@ -75,7 +76,7 @@ public class LuckPermsBridge implements PermissionsService {
   }
 
   @Override
-  public CompletableFuture<Boolean> has(@NotNull final UUID playerID, @NotNull final String permission) {
+  public CompletableFuture<Boolean> has(@NotNull UUID playerID, @NotNull String permission) {
     return with(playerID, user -> user.getCachedData()
                                             .getPermissionData()
                                             .checkPermission(permission)
@@ -83,17 +84,17 @@ public class LuckPermsBridge implements PermissionsService {
   }
 
   @Override
-  public CompletableFuture<Boolean> has(@NotNull final Player player, @NotNull final String permission) {
+  public CompletableFuture<Boolean> has(@NotNull Player player, @NotNull String permission) {
     return has(player.getUniqueId(), permission);
   }
 
   @Override
-  public CompletableFuture<Boolean> has(@NotNull final String playerName, @NotNull final String permission) {
+  public CompletableFuture<Boolean> has(@NotNull String playerName, @NotNull String permission) {
     return has(Bukkit.getOfflinePlayer(playerName).getUniqueId(), permission);
   }
 
   @Override
-  public CompletableFuture<Boolean> has(@NotNull final OfflinePlayer player, @NotNull final String permission) {
+  public CompletableFuture<Boolean> has(@NotNull OfflinePlayer player, @NotNull String permission) {
     return has(player.getUniqueId(), permission);
   }
 
@@ -172,7 +173,7 @@ public class LuckPermsBridge implements PermissionsService {
 
   @Override
   public String getPluginName() {
-    return this.PROVIDER;
+    return PROVIDER;
   }
 
   @Override
@@ -182,6 +183,6 @@ public class LuckPermsBridge implements PermissionsService {
 
   @Override
   public String getPluginVersion() {
-    return this.plugin.getServer().getPluginManager().getPlugin(this.PROVIDER).getDescription().getVersion();
+    return this.plugin.getServer().getPluginManager().getPlugin(PROVIDER).getDescription().getVersion();
   }
 }

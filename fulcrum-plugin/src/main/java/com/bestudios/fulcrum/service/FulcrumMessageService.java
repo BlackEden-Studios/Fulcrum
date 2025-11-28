@@ -13,7 +13,7 @@ import org.jetbrains.annotations.NotNull;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashMap;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -52,9 +52,9 @@ public class FulcrumMessageService implements MessageService {
           @NotNull ServicePriority servicePriority,
           @NotNull DatabaseGateway databaseGateway
   ) {
-    this.plugin   = Objects.requireNonNull(pluginRef,   Utils.messageRequireNonNull("plugin"));
+    this.plugin   = Objects.requireNonNull(pluginRef,       Utils.messageRequireNonNull("plugin"));
     this.priority = Objects.requireNonNull(servicePriority, Utils.messageRequireNonNull("priority"));
-    this.gateway  = Objects.requireNonNull(databaseGateway,  Utils.messageRequireNonNull("gateway"));
+    this.gateway  = Objects.requireNonNull(databaseGateway, Utils.messageRequireNonNull("gateway"));
   }
 
   @Override @NotNull
@@ -68,13 +68,12 @@ public class FulcrumMessageService implements MessageService {
     Objects.requireNonNull(message,    Utils.messageRequireNonNull("message"));
     // Create a future for the operation
     return CompletableFuture.supplyAsync(() -> {
+
       DatabaseQuery query = createQuery(channel, playerUUID);
-      String fieldName = generateFieldName(message);
-      byte[] messageData = message.toBytes();
+      Map<byte[], byte[]> fieldMap = new ConcurrentHashMap<>();
 
       // Store as a hash field
-      Map<byte[], byte[]> fieldMap = new ConcurrentHashMap<>();
-      fieldMap.put(fieldName.getBytes(), messageData);
+      fieldMap.put(generateFieldName(message).getBytes(), message.toBytes());
 
       try {
         gateway.setFields(query, fieldMap);
@@ -89,124 +88,77 @@ public class FulcrumMessageService implements MessageService {
   @Override @NotNull
   public CompletableFuture<Message> retrieveMessage(@NotNull String channel, @NotNull UUID playerUUID) {
     CompletableFuture<List<Message>> future = retrieveMessages(channel, playerUUID);
-    return future.thenApply(messages -> {
-      if (messages.isEmpty())
-        return null;
-      return messages.getFirst();
-    });
+    return future.thenApplyAsync(
+            messages -> {
+              if (messages.isEmpty()) return null;
+              return messages.getFirst();
+            }
+    );
   }
 
   @Override @NotNull
   public CompletableFuture<List<Message>> retrieveMessages(@NotNull String channel, @NotNull UUID playerUUID) {
-    Objects.requireNonNull(channel,    Utils.messageRequireNonNull("channel"));
-    Objects.requireNonNull(playerUUID, Utils.messageRequireNonNull("player UUID"));
-
+    checkInput(channel, playerUUID);
     return CompletableFuture.supplyAsync(() -> {
-      try {
+
         DatabaseQuery query = createQuery(channel, playerUUID);
         Map<byte[], byte[]> rawMessages = gateway.getKeys(query);
         if (rawMessages == null || rawMessages.isEmpty()) return Collections.emptyList();
+
         // Convert raw messages to messages
         List<Message> messages = new ArrayList<>();
         for (byte[] messageData : rawMessages.values()) {
           Message message = Message.fromBytes(messageData);
-          if (message != null)
-            messages.add(message);
+          if (message != null) messages.add(message);
         }
 
         // Sort by timestamp
         messages.sort(Comparator.comparingLong(Message::getTimestamp));
         return messages;
-
-      } catch (Exception e) {
-        plugin.getLogger().severe("Failed to retrieve messages: " + e.getMessage());
-        return Collections.emptyList();
-      }
     });
   }
 
   @Override
   public @NotNull CompletableFuture<Message> consumeMessage(@NotNull String channel, @NotNull UUID playerUUID) {
-    Objects.requireNonNull(channel,    Utils.messageRequireNonNull("channel"));
-    Objects.requireNonNull(playerUUID, Utils.messageRequireNonNull("player UUID"));
-
+    checkInput(channel, playerUUID);
     CompletableFuture<Message> future = retrieveMessage(channel, playerUUID);
     return future.thenApplyAsync(message -> {
-      if (message != null)
-        try {
-          gateway.deleteField(new RedisQuery(createQuery(channel, playerUUID).value(), generateFieldName(message)));
-        } catch (Exception e) {
-          plugin.getLogger().severe("Failed to consume message: " + e.getMessage());
-        }
+      deleteField(playerUUID, new RedisQuery(createQuery(channel, playerUUID).value(), generateFieldName(message)));
       return message;
     });
   }
 
   @Override @NotNull
   public CompletableFuture<List<Message>> consumeMessages(@NotNull String channel, @NotNull UUID playerUUID) {
-    Objects.requireNonNull(channel,    Utils.messageRequireNonNull("channel"));
-    Objects.requireNonNull(playerUUID, Utils.messageRequireNonNull("player UUID"));
-
+    checkInput(channel, playerUUID);
     CompletableFuture<List<Message>> future = retrieveMessages(channel, playerUUID);
-    return future.thenApply(messages -> {
-      if (!messages.isEmpty())
-        try {
-            gateway.deleteField(createQuery(channel, playerUUID));
-        } catch (Exception e) {
-          plugin.getLogger().severe("Failed to consume messages: " + e.getMessage());
-        }
+    return future.thenApplyAsync(messages -> {
+      deleteField(playerUUID, createQuery(channel, playerUUID));
       return messages;
     });
   }
 
   @Override @NotNull
   public CompletableFuture<Boolean> hasMessages(@NotNull String channel, @NotNull UUID playerUUID) {
-    Objects.requireNonNull(channel,    Utils.messageRequireNonNull("channel"));
-    Objects.requireNonNull(playerUUID, Utils.messageRequireNonNull("player UUID"));
-
+    checkInput(channel, playerUUID);
     return CompletableFuture.supplyAsync(() -> {
-      try {
-        DatabaseQuery query = createQuery(channel, playerUUID);
-        Boolean exists = gateway.exists(query);
-        return exists != null && exists;
-      } catch (Exception e) {
-        plugin.getLogger().severe("Failed to check messages: " + e.getMessage());
-        return false;
-      }
+      Boolean messageExists = gateway.exists(createQuery(channel, playerUUID));
+      return messageExists != null && messageExists;
     });
   }
 
   @Override @NotNull
   public CompletableFuture<Boolean> clearMessages(@NotNull String channel, @NotNull UUID playerUUID) {
-    Objects.requireNonNull(playerUUID, Utils.messageRequireNonNull("player UUID"));
-
-    return CompletableFuture.supplyAsync(() -> {
-      try {
-        DatabaseQuery query = createQuery(channel, playerUUID);
-        gateway.deleteField(query);
-        plugin.getLogger().info("Cleared messages for player " + playerUUID + " in channel " + channel);
-        return true;
-      } catch (Exception e) {
-        plugin.getLogger().severe("Failed to clear messages: " + e.getMessage());
-        return false;
-      }
-    });
+    checkInput(channel, playerUUID);
+    return CompletableFuture.supplyAsync(
+            () -> deleteField(playerUUID, createQuery(channel, playerUUID)));
   }
 
   @Override @NotNull
   public CompletableFuture<Boolean> clearAllMessages(@NotNull UUID playerUUID) {
     Objects.requireNonNull(playerUUID, Utils.messageRequireNonNull("player UUID"));
-    return CompletableFuture.supplyAsync(() -> {
-      try {
-        DatabaseQuery query = new RedisQuery(MESSAGE_PREFIX, playerUUID.toString());
-        gateway.deleteField(query);
-        plugin.getLogger().info("Cleared all messages for player " + playerUUID);
-        return true;
-      } catch (Exception e) {
-        plugin.getLogger().severe("Failed to clear all messages: " + e.getMessage());
-        return false;
-      }
-    });
+    return CompletableFuture.supplyAsync(
+            () -> deleteField(playerUUID, new RedisQuery(MESSAGE_PREFIX, playerUUID.toString())));
   }
 
   /**
@@ -228,6 +180,23 @@ public class FulcrumMessageService implements MessageService {
    */
   private String generateFieldName(@NotNull Message message) {
     return message.getMessageType() + ":" + message.getTimestamp();
+  }
+
+  /**
+   * Deletes all messages for a specific player with a specific query.
+   * @param playerID The UUID of the player
+   * @param query    The query to delete messages for
+   * @return True if the operation was successful, false otherwise
+   */
+  private boolean deleteField(UUID playerID, DatabaseQuery query)  {
+    try {
+      gateway.deleteField(query);
+      plugin.getLogger().info("Cleared messages for player " + playerID);
+      return true;
+    } catch (IOException e) {
+      plugin.getLogger().severe("Failed to clear messages: " + e.getMessage());
+      return false;
+    }
   }
 
   @Override
