@@ -1,4 +1,4 @@
-package com.bestudios.fulcrumVelocity;
+package com.bestudios.fulcrum.velocity;
 
 // The constants are replaced before compilation
 public class BuildConstants {

@@ -13,85 +13,60 @@ import java.time.LocalTime;
  */
 class GameTimeTest {
 
+  // Fixed reference date for testing time calculations
+  private static final LocalDate REF_DATE = LocalDate.of(2025, 1, 1);
+
   /*
    * Tests for the game day calculations
    */
   @Test
   void testGameDay_CorrectDay() {
-    // Test correct calculation of day
     LocalDate day = GameTime.getGameDay(LocalDateTime.of(2025, 10, 10, 10, 0));
     Assertions.assertEquals(LocalDate.of(2025,10,10), day, "Should calculate the game day as 10/10/2025");
   }
 
   @Test
   void testGameDay_CorrectDay_LeapYear() {
-    // Test correct calculation of day
     LocalDate day = GameTime.getGameDay(LocalDateTime.of(2024, 2, 29, 10, 0));
     Assertions.assertEquals(LocalDate.of(2024,2,29), day, "Should calculate the game day as 2/29/2024");
   }
 
   @Test
   void testGameDay_BeforeDailyReset() {
-    // Test correct calculation of day
     LocalDate day = GameTime.getGameDay(LocalDateTime.of(2025, 1, 1, 4, 0));
     Assertions.assertEquals(LocalDate.of(2024,12,31), day, "Should calculate the game day as 31/12/2024");
   }
 
   /*
-   * Tests for the game week calculations
-   */
-  // Time dependent test. Will fail if the game week changes.
-  /*
-  @Test
-  void testGameWeek_CorrectWeek() {
-    // Test correct calculation of week
-    boolean week = GameTime.isCurrentWeek(LocalDate.of(2025, 10, 31));
-    Assertions.assertTrue(week, "Should calculate the game week as true");
-  }
-
-  @Test
-  void testGameWeek_CorrectWeek_LeapMonth() {
-    // Test correct calculation of week
-    boolean week = GameTime.isCurrentWeek(LocalDate.of(2025, 11, 1));
-    Assertions.assertTrue(week, "Should calculate the game week as true");
-  }
-
-
-  @Test
-  void testGameWeek_IncorrectWeek() {
-    // Test incorrect calculation of week
-    boolean week = GameTime.isCurrentWeek(LocalDate.of(2025, 9, 29));
-    Assertions.assertFalse(week, "Should calculate the game week as false");
-  }
-*/
-  /*
    * Tests for the localTimeOfNextMinuteMark method
    */
   @Test
-  void testLocalTimeOfNextMinuteMark_CurrentlyBeforeTarget() {
-    // If the current time is 9:44:30, next :00 should be 15 minutes 30 seconds = 930 seconds
-    LocalTime testTime = LocalTime.of(9, 44, 30);
-    LocalTime expectedTime = LocalTime.of(9, 55, 0);
-    Assertions.assertEquals(expectedTime, GameTime.localTimeOfNextMinuteMark(testTime, 55),
-            "Should calculate 9:55:00 from 9:44:30");
+  void testTimeOfNextMark_CurrentlyBeforeTarget() {
+    // If the current time is 9:44:30, next :55 should be 09:55:00
+    LocalDateTime testTime = REF_DATE.atTime(9, 44, 30);
+    LocalDateTime expectedTime = REF_DATE.atTime(9, 55, 0);
 
+    Assertions.assertEquals(expectedTime, GameTime.timeOfNextMark(testTime, 55),
+            "Should calculate 9:55:00 from 9:44:30");
   }
 
   @Test
-  void testLocalTimeOfNextMinuteMark_CurrentlyAfterTarget() {
-    // If current time is 9:44:30, next :30 should be 45 minutes 30 seconds = 2730 seconds
-    LocalTime testTime = LocalTime.of(9, 44, 30);
-    LocalTime expectedTime = LocalTime.of(10, 30, 0);
-    Assertions.assertEquals(expectedTime, GameTime.localTimeOfNextMinuteMark(testTime, 30),
+  void testTimeOfNextMark_CurrentlyAfterTarget() {
+    // If current time is 9:44:30, next :30 should be 10:30:00 (Next Hour)
+    LocalDateTime testTime = REF_DATE.atTime(9, 44, 30);
+    LocalDateTime expectedTime = REF_DATE.atTime(10, 30, 0);
+
+    Assertions.assertEquals(expectedTime, GameTime.timeOfNextMark(testTime, 30),
             "Should calculate 10:30:00 from 9:44:30");
   }
 
   @Test
-  void testLocalTimeOfNextMinuteMark_ExactlyOnTarget() {
-    // If current time is exactly 10:00:00, next :00 should be 1 hour = 3600 seconds
-    LocalTime testTime = LocalTime.of(10, 0, 0);
-    LocalTime expectedTime = LocalTime.of(11, 0, 0);
-    Assertions.assertEquals(expectedTime, GameTime.localTimeOfNextMinuteMark(testTime, 0),
+  void testTimeOfNextMark_ExactlyOnTarget() {
+    // If current time is exactly 10:00:00, next :00 should be 11:00:00 (Next occurrence)
+    LocalDateTime testTime = REF_DATE.atTime(10, 0, 0);
+    LocalDateTime expectedTime = REF_DATE.atTime(11, 0, 0);
+
+    Assertions.assertEquals(expectedTime, GameTime.timeOfNextMark(testTime, 0),
             "Should calculate 11:00:00 when already at target time");
   }
 
@@ -99,24 +74,30 @@ class GameTimeTest {
    * Tests for the localTimeOfNextOccurrence method
    */
   @Test
-  void testLocalTimeOfNextOccurrence_CorrectInterval() {
-    // Target 10:00:00
-    LocalTime expectedTime = LocalTime.of(10, 0, 0);
-    Assertions.assertEquals(expectedTime, GameTime.localTimeOfNextOccurrence(10, 0),
+  void testTimeOfNextMark_CorrectInterval() {
+    // This test uses the static method that relies on LocalDateTime.now(),
+    // so we can only check the Time component logic unless we mock the clock.
+    // However, the method signature (Integer, Integer) implies a target hour/minute.
+
+    // We can test the overloaded method that takes 'start' to be safe and deterministic:
+    LocalDateTime start = REF_DATE.atTime(9, 44, 0);
+    LocalDateTime expected = REF_DATE.atTime(10, 0, 0);
+
+    Assertions.assertEquals(expected, GameTime.timeOfNextMark(start, 10, 0),
             "Should calculate 10:00:00 from 9:44:00");
   }
 
   @Test
-  void testLocalTimeOfNextOccurrence_WrongHoursInput() {
+  void testTimeOfNextMark_WrongHoursInput() {
     Assertions.assertThrows(IllegalArgumentException.class,
-            () -> GameTime.localTimeOfNextOccurrence(24, 0),
+            () -> GameTime.timeOfNextMark(24, 0),
             "Should throw IllegalArgumentException for hour >= 24");
   }
 
   @Test
-  void testLocalTimeOfNextOccurrence_WrongMinutesInput() {
+  void testTimeOfNextMark_WrongMinutesInput() {
     Assertions.assertThrows(IllegalArgumentException.class,
-            () -> GameTime.localTimeOfNextOccurrence(10, -5),
+            () -> GameTime.timeOfNextMark(10, -5),
             "Should throw IllegalArgumentException for invalid minute in time slice");
   }
 
@@ -124,55 +105,55 @@ class GameTimeTest {
    * Tests for the secondsUntilNextOccurrence method
    */
   @Test
-  void testSecondsUntilNextOccurrence_CorrectInterval() {
-    LocalTime testTime = LocalTime.of(9, 0, 0);
-    // Target 10:00:00
+  void testSecondsUntilNextMark_CorrectInterval() {
+    LocalDateTime testTime = REF_DATE.atTime(9, 0, 0);
+    // Target 10:00:00 -> 1 hour
     long expectedSeconds = 3600;
-    Assertions.assertEquals(expectedSeconds, GameTime.secondsUntilNextOccurrence(testTime, 10, 0),
+    Assertions.assertEquals(expectedSeconds, GameTime.secondsUntilNextMark(testTime, 10, 0),
             "Should calculate 3600 seconds from 9:00:00");
   }
 
   @Test
-  void testSecondsUntilNextOccurrence_NearMidnight() {
-    LocalTime testTime = LocalTime.of(23, 0, 0);
-    // Target 00:01:00
+  void testSecondsUntilNextMark_NearMidnight() {
+    LocalDateTime testTime = REF_DATE.atTime(23, 0, 0);
+    // Target 00:01:00 (Next Day) -> 1 hour and 1 minute
     long expectedSeconds = 3660;
-    Assertions.assertEquals(expectedSeconds, GameTime.secondsUntilNextOccurrence(testTime, 0, 1),
+    Assertions.assertEquals(expectedSeconds, GameTime.secondsUntilNextMark(testTime, 0, 1),
             "Should calculate 3660 seconds from 23:00:00");
   }
 
   @Test
-  void testSecondsUntilNextOccurrence_CloseMidnight() {
-    LocalTime testTime = LocalTime.of(23, 59, 59);
-    // Target 00:00:00
+  void testSecondsUntilNextMark_CloseMidnight() {
+    LocalDateTime testTime = REF_DATE.atTime(23, 59, 59);
+    // Target 00:00:00 (Next Day) -> 1 second
     long expectedSeconds = 1;
-    Assertions.assertEquals(expectedSeconds, GameTime.secondsUntilNextOccurrence(testTime, 0, 0),
+    Assertions.assertEquals(expectedSeconds, GameTime.secondsUntilNextMark(testTime, 0, 0),
             "Should calculate 1 seconds from 23:59:59");
   }
 
   @Test
-  void testSecondsUntilNextOccurrence_InvalidHour_Negative() {
+  void testSecondsUntilNextMark_InvalidHour_Negative() {
     Assertions.assertThrows(
             IllegalArgumentException.class,
-            () -> GameTime.secondsUntilNextOccurrence(-1, 0),
+            () -> GameTime.secondsUntilNextMark(-1, 0),
             "Should throw IllegalArgumentException for negative hour"
     );
   }
 
   @Test
-  void testSecondsUntilNextOccurrence_InvalidHour_TooLarge() {
+  void testSecondsUntilNextMark_InvalidHour_TooLarge() {
     Assertions.assertThrows(
             IllegalArgumentException.class,
-            () -> GameTime.secondsUntilNextOccurrence(24, 0),
+            () -> GameTime.secondsUntilNextMark(24, 0),
             "Should throw IllegalArgumentException for hour >= 24"
     );
   }
 
   @Test
-  void testSecondsUntilNextOccurrence_InvalidMinute_Negative() {
+  void testSecondsUntilNextMark_InvalidMinute_Negative() {
     Assertions.assertThrows(
             IllegalArgumentException.class,
-            () -> GameTime.secondsUntilNextOccurrence(10, -5),
+            () -> GameTime.secondsUntilNextMark(10, -5),
             "Should throw IllegalArgumentException for invalid minute in time slice"
     );
   }
@@ -181,50 +162,51 @@ class GameTimeTest {
    * Tests for the secondsUntilNextMinuteMark method
    */
   @Test
-  void testSecondsUntilNextMinuteMark_CurrentlyBeforeTarget() {
-    // If the current time is 9:44:30, next :00 should be 15 minutes 30 seconds = 930 seconds
-    LocalTime testTime = LocalTime.of(9, 44, 30);
-    long seconds = GameTime.secondsUntilNextMinuteMark(testTime, 55);
+  void testSecondsUntilNextMark_CurrentlyBeforeTarget_MinuteOnly() {
+    // If the current time is 9:44:30, next :55 should be 10 mins 30s
+    LocalDateTime testTime = REF_DATE.atTime(9, 44, 30);
+    long seconds = GameTime.secondsUntilNextMark(testTime, 55);
     Assertions.assertEquals(630, seconds, "Should calculate 630 seconds from 9:44:30 to 09:55:00");
   }
 
   @Test
-  void testSecondsUntilNextMinuteMark_CurrentlyAfterTarget() {
-    // If current time is 9:44:30, next :30 should be 45 minutes 30 seconds = 2730 seconds
-    LocalTime testTime = LocalTime.of(9, 44, 30);
-    long seconds = GameTime.secondsUntilNextMinuteMark(testTime, 30);
+  void testSecondsUntilNextMark_CurrentlyAfterTarget_MinuteOnly() {
+    // If current time is 9:44:30, next :30 should be 45m 30s
+    LocalDateTime testTime = REF_DATE.atTime(9, 44, 30);
+    long seconds = GameTime.secondsUntilNextMark(testTime, 30);
     Assertions.assertEquals(2730, seconds, "Should calculate 2730 seconds from 9:44:30 to 10:30:00");
   }
 
   @Test
-  void testSecondsUntilNextMinuteMark_ExactlyOnTarget() {
-    // If current time is exactly 10:00:00, next :00 should be 1 hour = 3600 seconds
-    LocalTime testTime = LocalTime.of(10, 0, 0);
-    long seconds = GameTime.secondsUntilNextMinuteMark(testTime, 0);
+  void testSecondsUntilNextMark_ExactlyOnTarget_MinuteOnly() {
+    // If current time is exactly 10:00:00, next :00 should be 1 hour
+    LocalDateTime testTime = REF_DATE.atTime(10, 0, 0);
+    long seconds = GameTime.secondsUntilNextMark(testTime, 0);
     Assertions.assertEquals(3600, seconds, "Should calculate 3600 seconds when already at target time");
   }
 
   @Test
   void testSecondsUntilNextMinuteMark_WithSecondsMark() {
-    // If current time is 14:23:45, next :30 should be 6 minutes 15 seconds = 375 seconds
-    LocalTime testTime = LocalTime.of(14, 23, 45);
-    long seconds = GameTime.secondsUntilNextMinuteMark(testTime, 30);
+    // If current time is 14:23:45, next :30 should be 6m 15s
+    LocalDateTime testTime = REF_DATE.atTime(14, 23, 45);
+    long seconds = GameTime.secondsUntilNextMark(testTime, 30);
     Assertions.assertEquals(375, seconds, "Should calculate 375 seconds from 14:23:45 to 14:30:00");
   }
 
   @Test
-  void testSecondsUntilNextMinuteMark_NearMidnight() {
-    // If current time is 23:55:00, next :00 should be 5 minutes = 300 seconds
-    LocalTime testTime = LocalTime.of(23, 55, 0);
-    long seconds = GameTime.secondsUntilNextMinuteMark(testTime, 0);
+  void testSecondsUntilNextMark_NearMidnight_MinuteOnly() {
+    // If current time is 23:55:00, next :00 should be 5 minutes
+    LocalDateTime testTime = REF_DATE.atTime(23, 55, 0);
+    long seconds = GameTime.secondsUntilNextMark(testTime, 0);
     Assertions.assertEquals(300, seconds, "Should calculate 300 seconds from 23:55:00 to midnight");
   }
 
 
   @Test
   void testBoundaryCondition_Midnight() {
-    LocalTime midnight = LocalTime.of(0, 0, 0);
-    long seconds = GameTime.secondsUntilNextMinuteMark(midnight, 0);
+    // Test exact midnight boundary
+    LocalDateTime midnight = REF_DATE.atStartOfDay(); // 00:00:00
+    long seconds = GameTime.secondsUntilNextMark(midnight, 0);
 
     Assertions.assertEquals(3600, seconds,
             "At midnight (:00), next :00 should be 1 hour away");
@@ -232,8 +214,8 @@ class GameTimeTest {
 
   @Test
   void testBoundaryCondition_LastSecondBeforeTarget() {
-    LocalTime testTime = LocalTime.of(9, 59, 59);
-    long seconds = GameTime.secondsUntilNextMinuteMark(testTime, 0);
+    LocalDateTime testTime = REF_DATE.atTime(9, 59, 59);
+    long seconds = GameTime.secondsUntilNextMark(testTime, 0);
 
     Assertions.assertEquals(1, seconds,
             "One second before target should return 1 second");
@@ -244,46 +226,47 @@ class GameTimeTest {
    */
   @Test
   void testSecondsUntilNextInterval_15Minutes() {
-    // If current time is 9:44:00, next 15-min interval is 9:45:00 = 60 seconds
-    LocalTime testTime = LocalTime.of(9, 44, 0);
+    // 9:44:00 -> next 15m is 9:45:00 (60s)
+    LocalDateTime testTime = REF_DATE.atTime(9, 44, 0);
     int nextInterval = 15;
-    long expectedSeconds = GameTime.secondsUntilNextInterval(testTime, nextInterval);
+    long expectedSeconds = GameTime.secondsUntilNextInterval(testTime.toLocalTime(), nextInterval);
     Assertions.assertEquals(60, expectedSeconds, "Should calculate 60 seconds to next 15-minute interval");
   }
 
   @Test
   void testSecondsUntilNextInterval_OnInterval() {
-    // If current time is 10:00:00, next 15-min interval is 10:15:00 = 900 seconds
-    LocalTime testTime = LocalTime.of(10, 0, 0);
-    int nextInterval = 15; // Next interval after :00 is :15
-    long expectedSeconds = GameTime.secondsUntilNextInterval(testTime, nextInterval);
+    // 10:00:00 -> next 15m is 10:15:00 (900s)
+    LocalDateTime testTime = REF_DATE.atTime(10, 0, 0);
+    int nextInterval = 15;
+    long expectedSeconds = GameTime.secondsUntilNextInterval(testTime.toLocalTime(), nextInterval);
     Assertions.assertEquals(900, expectedSeconds, "Should calculate 900 seconds to next interval when on interval boundary");
   }
 
   @Test
   void testSecondsUntilNextInterval_30Minutes() {
-    // If current time is 10:25:00, next 30-min interval is 10:30:00 = 300 seconds
-    LocalTime testTime = LocalTime.of(10, 25, 0);
+    // 10:25:00 -> next 30m is 10:30:00 (300s)
+    LocalDateTime testTime = REF_DATE.atTime(10, 25, 0);
     int nextInterval = 30;
-    long expectedSeconds = GameTime.secondsUntilNextInterval(testTime, nextInterval);
+    long expectedSeconds = GameTime.secondsUntilNextInterval(testTime.toLocalTime(), nextInterval);
     Assertions.assertEquals(300, expectedSeconds, "Should calculate 300 seconds to next 30-minute interval");
   }
 
   @Test
   void testSecondsUntilNextInterval_CrossingHourBoundary() {
-    // If current time is 10:55:00, next 60-min interval is 11:00:00 = 300 seconds
-    LocalTime testTime = LocalTime.of(10, 55, 0);
+    // 10:55:00 -> next 60m is 11:00:00 (300s)
+    LocalDateTime testTime = REF_DATE.atTime(10, 55, 0);
     int nextInterval = 60;
-    long expectedSeconds = GameTime.secondsUntilNextInterval(testTime, nextInterval);
+    long expectedSeconds = GameTime.secondsUntilNextInterval(testTime.toLocalTime(), nextInterval);
     Assertions.assertEquals(300, expectedSeconds, "Should calculate 300 seconds when crossing hour boundary");
   }
 
   @Test
   void testSecondsUntilNextInterval_CrossingMidnight() {
-    // If current time is 23:55:00, next 60-min interval is 00:00:00 = 3600 seconds
-    LocalTime testTime = LocalTime.of(23, 55, 0);
+    // 23:55:00 -> next 60m is 00:00:00 (300s)
+    // Note: secondsUntilNextInterval uses LocalTime logic, so it wraps around day
+    LocalDateTime testTime = REF_DATE.atTime(23, 55, 0);
     int nextInterval = 60;
-    long expectedSeconds = GameTime.secondsUntilNextInterval(testTime, nextInterval);
+    long expectedSeconds = GameTime.secondsUntilNextInterval(testTime.toLocalTime(), nextInterval);
     Assertions.assertEquals(300, expectedSeconds, "Should calculate 300 seconds when crossing midnight");
   }
 

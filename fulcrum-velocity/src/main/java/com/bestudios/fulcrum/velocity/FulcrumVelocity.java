@@ -1,4 +1,4 @@
-package com.bestudios.fulcrumVelocity;
+package com.bestudios.fulcrum.velocity;
 
 import com.google.inject.Inject;
 import com.velocitypowered.api.event.proxy.ProxyInitializeEvent;
