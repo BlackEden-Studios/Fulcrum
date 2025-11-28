@@ -14,6 +14,7 @@ import com.bestudios.fulcrum.api.util.Lock;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.plugin.java.JavaPlugin;
+import org.checkerframework.checker.units.qual.C;
 import org.jetbrains.annotations.NotNull;
 
 import javax.imageio.spi.ServiceRegistry;
@@ -25,28 +26,28 @@ import java.util.logging.Level;
 /**
  * Abstract base class for Fulcrum-based Paper plugins providing core functionality
  * for command registration, configuration management, and debug mode support.
- *
- * <p>This class extends {@link JavaPlugin} and implements {@link FulcrumPlugin},
+ * <p>
+ * This class extends {@link JavaPlugin} and implements {@link FulcrumPlugin},
  * serving as the foundation for all Fulcrum framework plugins. It automatically
  * initializes and manages registries for commands and configurations, providing
- * a streamlined API for plugin development.</p>
- *
- * <p>Features include:</p>
+ * a streamlined API for plugin development.
+ * <p>
+ * Features include:
  * <ul>
  *   <li>Automatic registration of base configuration (config.yml)</li>
  *   <li>Multi-language support with configurable language files</li>
  *   <li>Built-in debug command for runtime debugging</li>
  *   <li>Simple API for child plugins to register custom commands</li>
  * </ul>
- *
- * <p>Child plugins should override {@link #registerAdditionalCommands()} and {@link #additionalInitializationTasks()} to perform custom initialization
+ * <p>
+ * Child plugins should override {@link #registerAdditionalCommands()} and {@link #additionalInitializationTasks()} to perform custom initialization
  * tasks such as registering event listeners, scheduling tasks, or setting up
  * additional configurations. Always call {@code super.onEnable()} to ensure
- * proper initialization of the base functionality.</p>
- *
- * <p>The same goes for {@link #additionalTerminationTasks()} in {@link #onDisable()} to handle any cleanup tasks.</p>
- *
- * <p>The default configuration structure expects:</p>
+ * proper initialization of the base functionality.
+ * <p>
+ * The same goes for {@link #additionalTerminationTasks()} in {@link #onDisable()} to handle any cleanup tasks.
+ * <p>
+ * The default configuration structure expects:
  * <ul>
  *   <li>A {@code config.yml} file in the plugin's data folder</li>
  *   <li>A {@code language} key in config.yml specifying the language code (defaults to "en")</li>
@@ -67,7 +68,7 @@ public abstract class FulcrumPlugin extends JavaPlugin{
   /** Registry for commands*/
   private CommandsRegistry<CommandTree, CommandWrapper> commandsRegistry;
   /** Registry for configurations*/
-  private ConfigurationsRegistry configurationsRegistry;
+  private ConfigurationsRegistry<YamlConfiguration> configurationsRegistry;
   /** Service registry */
   private ServiceRegistry servicesRegistry;
   /** Debug mode flag */
@@ -265,6 +266,7 @@ public abstract class FulcrumPlugin extends JavaPlugin{
 
   public FileConfiguration getLanguageConfiguration() {
     ConfigurationHolder<?> langHolder = configurationsRegistry.getHolder("language");
+    assert langHolder != null;
     return langHolder.getConfig();
   }
 

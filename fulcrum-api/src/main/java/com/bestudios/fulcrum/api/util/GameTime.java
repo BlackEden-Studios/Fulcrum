@@ -6,25 +6,26 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
 import java.time.temporal.ChronoUnit;
 import java.time.temporal.TemporalAdjusters;
 
 /**
  * Utility class for calculating time-related values in Fulcrum plugins.
- * <p></p>
+ * <p>
  * This class provides methods for calculating the current "game day" and
  * determining if a given date is the current "game day".
- * <p></p>
+ * <p>
  * It also provides methods for calculating the number of seconds until the given minute mark or time.
- * <p></p>
  * @author Bestialus
  * @version 1.0
- * @since 1.0
+ * @since   1.0
 */
 public class GameTime {
 
   /** Time when the new day starts (6 AM) */
   private static final LocalTime NEW_DAY_TIME = LocalTime.of(6, 0);
+  /** Date format for the plugin */
   private static final String DATE_FORMAT = "yyyy-MM-dd";
 
   /**
@@ -48,9 +49,7 @@ public class GameTime {
    * A new "game day" starts at 6 AM
    * @return true if the given date matches the current game day
    */
-  public static boolean isCurrentDate(LocalDate date) {
-    // If no date is passed, return false
-    if (date == null) return false;
+  public static boolean isCurrentDate(@NotNull LocalDate date) {
     return date.equals(GameTime.getGameDay());
   }
 
@@ -60,13 +59,13 @@ public class GameTime {
    * @return true if the given date matches the current game day
    */
   public static boolean isCurrentDate(@NotNull String dateString) {
-    LocalDate date;
     try {
-      date = LocalDate.parse(dateString, DateTimeFormatter.ofPattern(DATE_FORMAT));
-    } catch (Exception e) {
+      LocalDate date = LocalDate.parse(dateString, DateTimeFormatter.ofPattern(DATE_FORMAT));
+      return isCurrentDate(date);
+    } catch (DateTimeParseException e) {
       // If there's any error parsing the date, assume it's not the current day
       return false;
-    } return isCurrentDate(date);
+    }
   }
 
   /**
@@ -86,144 +85,130 @@ public class GameTime {
    * @return true if the given date is in the current week
    */
   public static boolean isCurrentWeek(String dateString) {
-    LocalDate date;
     try {
-      date = LocalDate.parse(dateString, DateTimeFormatter.ofPattern(DATE_FORMAT));
-    } catch (Exception e) {
+      LocalDate date = LocalDate.parse(dateString, DateTimeFormatter.ofPattern(DATE_FORMAT));
+      return isCurrentWeek(date);
+    } catch (DateTimeParseException e) {
       // If there's any error parsing the date, assume it's not current week
       return false;
-    } return isCurrentWeek(date);
+    }
   }
 
   /**
    * Calculates the time of the next occurrence of a specific minute mark from a given time.
    * For example, if it's currently 9:44:30 and minuteMark is 0, this returns 10:00:00.
    *
-   * @param from The starting time
-   * @param minuteMark The target minute mark (0-59). Use 0 for the top of the hour.
+   * @param start  The starting time
+   * @param minute The target minute mark (0-59). Use 0 for the top of the hour.
    * @return The time of the next occurrence of the specified minute
    * @throws IllegalArgumentException if minuteMark is not between 0 and 59
    */
-  public static LocalTime localTimeOfNextMinuteMark(LocalTime from, int minuteMark) {
-    if (minuteMark < 0 || minuteMark > 59) {
-      throw new IllegalArgumentException("Minute mark must be between 0 and 59, got: " + minuteMark);
-    }
-    return from.withMinute(minuteMark)
-               .withSecond(0)
-               .withNano(0)
-        // If the target time has already passed this hour, move to the next hour
-               .plusHours(!from.withMinute(minuteMark).withSecond(0).isAfter(from) ? 1 : 0);
+  public static LocalDateTime timeOfNextMark(@NotNull LocalDateTime start, @NotNull Integer minute) {
+    return timeOfNextMark(start, null, minute);
   }
 
   /**
    * Calculates the time of the next occurrence of a specific minute mark.
    * For example, if it's currently 9:44:30 and minuteMark is 0, this returns 10:00:00.
    *
-   * @param minuteMark The target minute mark (0-59). Use 0 for the top of the hour.
+   * @param minute The target minute mark (0-59). Use 0 for the top of the hour.
    * @return The time of the next occurrence of the specified minute
    * @throws IllegalArgumentException if minuteMark is not between 0 and 59
    */
-  public static LocalTime localTimeOfNextMinuteMark(int minuteMark) {
-    return localTimeOfNextMinuteMark(LocalTime.now(), minuteMark);
+  public static LocalDateTime timeOfNextMark(@NotNull Integer minute) {
+    return timeOfNextMark(LocalDateTime.now(), minute);
   }
 
   /**
    * Calculates the time of the next occurrence of a specific hour and minute.
    * For example, if you want the next 10:00, this returns 10:00:00.
    *
-   * @param hourSlice The target hour (0-23)
-   * @param minuteSlice The target minute (0-59)
+   * @param hour   The target hour (0-23)
+   * @param minute The target minute (0-59)
    * @return The time of the next occurrence of the specified time
    * @throws IllegalArgumentException if hour or minute values are out of range
    */
-  public static LocalTime localTimeOfNextOccurrence(int hourSlice, int minuteSlice) {
-    if (hourSlice < 0 || hourSlice > 23) {
-      throw new IllegalArgumentException("Hour slice must be between 0 and 23, got: " + hourSlice);
-    }
-    if (minuteSlice < 0 || minuteSlice > 59) {
-      throw new IllegalArgumentException("Minute slice must be between 0 and 59, got: " + minuteSlice);
-    }
-    return LocalTime.of(hourSlice, minuteSlice, 0);
+  public static LocalDateTime timeOfNextMark(Integer hour, Integer minute) {
+    return timeOfNextMark(LocalDateTime.now(), hour, minute);
+  }
+
+  /**
+   * Calculates the time of the next occurrence of a specific hour and minute, from a specific date.
+   * For example, if you want the next 10:00, this returns 10:00:00.
+   *
+   * @param start  The starting day
+   * @param hour   The target hour (0-23)
+   * @param minute The target minute (0-59)
+   * @return The time of the next occurrence of the specified time
+   * @throws IllegalArgumentException if hour or minute values are out of range
+   */
+  public static LocalDateTime timeOfNextMark(
+          @NotNull LocalDateTime start,
+          Integer hour,
+          @NotNull Integer minute
+  ) {
+    validateHours(hour);
+    validateMinutes(minute);
+
+    LocalDateTime candidate = start.truncatedTo(ChronoUnit.MINUTES)
+                                   .withMinute(minute);
+
+    if (hour != null) {
+      candidate = candidate.withHour(hour);
+      if (!candidate.isAfter(start)) return candidate.plusDays(1);
+    } else if (!candidate.isAfter(start)) return candidate.plusHours(1);
+    return candidate;
   }
 
   /**
    * Calculates the number of seconds from now until the next occurrence of a specific hour and minute.
    * For example, if it's currently 9:44:30, and you want the next 10:00, this returns the seconds until then.
    *
-   * @param hourSlice The target hour (0-23)
-   * @param minuteSlice The target minute (0-59)
+   * @param hour   The target hour (0-23)
+   * @param minute The target minute (0-59)
    * @return The number of seconds until the next occurrence of the specified time
    * @throws IllegalArgumentException if hour or minute values are out of range
    */
-  public static long secondsUntilNextOccurrence(LocalTime from, int hourSlice, int minuteSlice) {
-    if (hourSlice < 0 || hourSlice > 23) {
-      throw new IllegalArgumentException("Hour slice must be between 0 and 23, got: " + hourSlice);
-    }
-    if (minuteSlice < 0 || minuteSlice > 59) {
-      throw new IllegalArgumentException("Minute slice must be between 0 and 59, got: " + minuteSlice);
-    }
-    LocalTime target = localTimeOfNextOccurrence(hourSlice, minuteSlice);
-
-    // If the target time has already passed today, it will happen tomorrow
-    if (target.isBefore(from)) {
-      // Consider the intervals before and after midnight
-      return from.until(LocalTime.MAX, ChronoUnit.SECONDS) + 1 + LocalTime.MIN.until(target, ChronoUnit.SECONDS);
-    }
-
-    return from.until(target, ChronoUnit.SECONDS);
+  public static long secondsUntilNextMark(LocalDateTime start, Integer hour, Integer minute) {
+    return start.until(timeOfNextMark(hour, minute), ChronoUnit.SECONDS);
   }
 
   /**
    * Calculates the number of seconds from now until the next occurrence of a specific hour and minute.
    * For example, if it's currently 9:44:30, and you want the next 10:00, this returns the seconds until then.
    *
-   * @param hourSlice The target hour (0-23)
-   * @param minuteSlice The target minute (0-59)
+   * @param hour   The target hour (0-23)
+   * @param minute The target minute (0-59)
    * @return The number of seconds until the next occurrence of the specified time
    * @throws IllegalArgumentException if hour or minute values are out of range
    */
-  public static long secondsUntilNextOccurrence(int hourSlice, int minuteSlice) {
-    return secondsUntilNextOccurrence(LocalTime.now(), hourSlice, minuteSlice);
+  public static long secondsUntilNextMark(Integer hour, Integer minute) {
+    return secondsUntilNextMark(LocalDateTime.now(), hour, minute);
   }
 
   /**
    * Calculates the number of seconds from a given time until the next occurrence of a specific minute mark.
    * Useful for testing or calculating delays based on a specific starting time.
    *
-   * @param from The starting time
-   * @param minuteMark The target minute mark (0-59)
+   * @param start      The starting time
+   * @param minute The target minute mark (0-59)
    * @return The number of seconds until the next occurrence
    * @throws IllegalArgumentException if minuteMark is not between 0 and 59
    */
-  public static long secondsUntilNextMinuteMark(@NotNull LocalTime from, int minuteMark) {
-    if (minuteMark < 0 || minuteMark > 59) {
-      throw new IllegalArgumentException("Minute slice must be between 0 and 59, got: " + minuteMark);
-    }
-
-    LocalTime target = from.withMinute(minuteMark)
-                           .withSecond(0)
-                           .withNano(0)
-              // If the target time has already passed this hour, move to the next hour
-                           .plusHours(!from.withMinute(minuteMark).withSecond(0).isAfter(from) ? 1 : 0);
-
-    // If the target time has already passed today, it will happen tomorrow
-    if (target.isBefore(from)) {
-      // Consider the intervals before and after midnight
-      return from.until(LocalTime.MAX, ChronoUnit.SECONDS) + 1 + LocalTime.MIN.until(target, ChronoUnit.SECONDS);
-    }
-    return from.until(target, ChronoUnit.SECONDS);
+  public static long secondsUntilNextMark(@NotNull LocalDateTime start, Integer minute) {
+    return secondsUntilNextMark(start, null, minute);
   }
 
   /**
    * Calculates the number of seconds from now until the next occurrence of a specific minute mark.
    * For example, if it's currently 9:44:30 and minuteMark is 0, this returns the seconds until 10:00:00.
    *
-   * @param minuteMark The target minute mark (0-59). Use 0 for the top of the hour.
+   * @param minute The target minute mark (0-59). Use 0 for the top of the hour.
    * @return The number of seconds until the next occurrence of the specified minute
    * @throws IllegalArgumentException if minuteMark is not between 0 and 59
    */
-  public static long secondsUntilNextMinuteMark(int minuteMark) {
-    return secondsUntilNextMinuteMark(LocalTime.now(), minuteMark);
+  public static long secondsUntilNextMark(Integer minute) {
+    return secondsUntilNextMark(LocalDateTime.now(), null, minute);
   }
 
   /**
@@ -237,15 +222,11 @@ public class GameTime {
    * @throws IllegalArgumentException if intervalMinutes is not a valid divisor of 1440
    */
   public static long secondsUntilNextInterval(LocalTime from, int intervalMinutes) {
-    if (intervalMinutes < 1) {
-      throw new IllegalArgumentException("Interval must be greater than 0, got: " + intervalMinutes);
-    }
+    validateHours(intervalMinutes);
     // Check if the interval is a divisor of 1440 (the number of minutes in a day)
-    if ((24*60) % intervalMinutes != 0) {
+    if ((24*60) % intervalMinutes != 0)
       throw new IllegalArgumentException(
-              "Interval must be a divisor of 1440 (the number of minutes in a day), got: " + intervalMinutes
-      );
-    }
+              "Interval must be a divisor of 1440 (the number of minutes in a day), got: " + intervalMinutes);
 
     int currentMinute = from.getMinute() + from.getHour() * 60;
     int minutesToNextInterval = intervalMinutes - ( currentMinute % intervalMinutes );
@@ -285,5 +266,27 @@ public class GameTime {
    */
   public static long ticksToSeconds(long ticks) {
     return ticks / 20L;
+  }
+
+  /**
+   * Validates the input integer as a minute digit
+   * @param minute The input to validate as minute
+   * @throws IllegalArgumentException if the input is not a valid minute
+   */
+  private static void validateMinutes(Integer minute) {
+    if (minute == null) return;
+    if (minute < 0 || minute > 59)
+      throw new IllegalArgumentException("Minute mark must be between 0 and 59, got: " + minute);
+  }
+
+  /**
+   * Validates the input integer as an hour digit
+   * @param hour The input to validate as hour
+   * @throws IllegalArgumentException if the input is not a valid hour
+   */
+  private static void validateHours(Integer hour) {
+    if (hour == null) return;
+    if (hour < 0 || hour > 23)
+      throw new IllegalArgumentException("Hour slice must be between 0 and 23, got: " + hour);
   }
 }
