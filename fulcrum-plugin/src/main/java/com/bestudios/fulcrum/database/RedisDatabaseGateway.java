@@ -15,6 +15,7 @@ import redis.clients.jedis.exceptions.JedisConnectionException;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.RejectedExecutionException;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
@@ -55,10 +56,10 @@ public class RedisDatabaseGateway implements DatabaseGateway {
   /**
    * Constructor for RedisDatabaseGateway.
    *
-   * @param plugin The Fulcrum plugin instance
+   * @param pluginRef The Fulcrum plugin instance
    */
-  public RedisDatabaseGateway(FulcrumPlugin plugin) {
-    this.plugin = plugin;
+  public RedisDatabaseGateway(FulcrumPlugin pluginRef) {
+    this.plugin = pluginRef;
     this.isEnabled = false;
   }
 
@@ -75,10 +76,10 @@ public class RedisDatabaseGateway implements DatabaseGateway {
     if (!(lock instanceof Fulcrum.FulcrumLock))
       throw new IllegalArgumentException("Lock provided is illegal");
     // Load configuration values
-    this.host = configuration.getString("database.host", "localhost");
-    this.port = configuration.getInt("database.port", 6380);
-    this.password = configuration.getString("database.password", "P455W0RD");
-    this.database = configuration.getInt("database.database", 0);
+    this.host           = configuration.getString("database.host", "localhost");
+    this.port           = configuration.getInt("database.port", 6380);
+    this.password       = configuration.getString("database.password", "P455W0RD");
+    this.database       = configuration.getInt("database.database", 0);
     this.maxConnections = configuration.getInt("database.max_connections", 16);
     // Establish the connection
     return connect();
@@ -174,12 +175,19 @@ public class RedisDatabaseGateway implements DatabaseGateway {
    *
    * @param query  The query to set the key to
    * @param value  The value to insert
-   * @throws Exception when the execution fails
+   * @throws RejectedExecutionException when the execution fails
    */
   @Override
-  public void setField(@NotNull DatabaseQuery query, byte[] value) throws Exception {
-    boolean result = this.executeVoid(jedis -> jedis.set(query.value().getBytes(), value));
-    if (!result) throw new Exception();
+  public void setField(@NotNull DatabaseQuery query, byte[] value) throws RejectedExecutionException {
+    Boolean result = this.execute(jedis -> {
+      jedis.set(query.value().getBytes(), value);
+      return true;
+    });
+
+    // execute() returns null if an exception occurred or the connection failed
+    if (result == null || !result) {
+      throw new RejectedExecutionException("Failed to set field");
+    }
   }
 
   /**
@@ -187,9 +195,9 @@ public class RedisDatabaseGateway implements DatabaseGateway {
    *
    * @param query  The query to set the key to
    * @param value  The value to insert
-   * @throws Exception when the execution fails
+   * @throws RejectedExecutionException when the execution fails
    */
-  public void setField(@NotNull DatabaseQuery query, @NotNull String value) throws Exception {
+  public void setField(@NotNull DatabaseQuery query, @NotNull String value) throws RejectedExecutionException {
     this.setField(query, value.getBytes());
   }
 
@@ -198,17 +206,21 @@ public class RedisDatabaseGateway implements DatabaseGateway {
    *
    * @param query           The query to set the key to
    * @param fieldsAndValues Map containing the fields to set with the specified value
-   * @throws Exception when the execution fails
+   * @throws RejectedExecutionException when the execution fails
    */
   @Override
-  public void setFields(@NotNull DatabaseQuery query, @NotNull Map<byte[], byte[]> fieldsAndValues) throws Exception {
+  public void setFields(
+          @NotNull DatabaseQuery query,
+          @NotNull Map<byte[], byte[]> fieldsAndValues
+  ) throws RejectedExecutionException {
+    // Set the fields in a single transaction
     Boolean result = execute(jedis -> {
       // Set all hash fields at once
       String response = jedis.hmset(query.value().getBytes(), fieldsAndValues);
       return "OK".equals(response);
     });
 
-    if (result == null || !result) throw new Exception("Failed to set hash fields");
+    if (result == null || !result) throw new RejectedExecutionException("Failed to set hash fields");
   }
 
   /**
@@ -218,8 +230,9 @@ public class RedisDatabaseGateway implements DatabaseGateway {
    */
   @Override
   public void deleteField(@NotNull DatabaseQuery query) {
-    this.executeVoid(jedis -> {
+    this.execute(jedis -> {
       jedis.del(query.value());
+      return true;
     });
   }
 
@@ -229,33 +242,26 @@ public class RedisDatabaseGateway implements DatabaseGateway {
    * @return true if the connection was successful, false otherwise
    */
   private boolean connect() {
-    if (this.pool != null && !this.pool.isClosed()) {
-      this.pool.close();
-    }
+    if (this.pool != null && !this.pool.isClosed()) this.pool.close();
 
-    try {
-      // Configure the Jedis connection pool
-      JedisPoolConfig poolConfig = new JedisPoolConfig();
-      poolConfig.setMaxTotal(this.maxConnections);
-      poolConfig.setMaxIdle(this.maxConnections / 2);
-      poolConfig.setMinIdle(1);
-      poolConfig.setTestOnBorrow(true);
-      poolConfig.setTestOnReturn(true);
-      poolConfig.setBlockWhenExhausted(true);
+    // Configure the Jedis connection pool
+    JedisPoolConfig poolConfig = new JedisPoolConfig();
+    poolConfig.setMaxTotal(this.maxConnections);
+    poolConfig.setMaxIdle(this.maxConnections / 2);
+    poolConfig.setMinIdle(1);
+    poolConfig.setTestOnBorrow(true);
+    poolConfig.setTestOnReturn(true);
+    poolConfig.setBlockWhenExhausted(true);
 
-      // Create the Jedis connection pool
-      if (this.password != null && !this.password.isEmpty()) {
-        this.pool = new JedisPool(poolConfig, this.host, this.port, 5000, this.password, this.database);
-      } else {
-        this.pool = new JedisPool(poolConfig, this.host, this.port, 5000, null, this.database);
-      }
-      // Test the connection
-      try (Jedis jedis = this.pool.getResource()) {
-        jedis.ping();
-        this.isEnabled = true;
-        this.plugin.getLogger().info("Successfully connected to Redis server at " + this.host + ":" + this.port);
-        return true;
-      }
+    // Create the Jedis connection pool
+    this.pool = new JedisPool(poolConfig, this.host, this.port, 5000, this.password, this.database);
+
+    // Test the connection
+    try (Jedis jedis = this.pool.getResource()) {
+      jedis.ping();
+      this.isEnabled = true;
+      this.plugin.getLogger().info("Successfully connected to Redis server at " + this.host + ":" + this.port);
+      return true;
     } catch (Exception e) {
       this.isEnabled = false;
       this.plugin.getLogger().severe("SEVERE - Failed to connect to Redis server: " + e);
@@ -270,7 +276,7 @@ public class RedisDatabaseGateway implements DatabaseGateway {
    * @param function The function to execute with a Jedis resource
    * @return The result of the function, or null if an error occurred
    */
-  private <T> T execute(Function<Jedis, T> function) {
+  private <T> @Nullable T execute(Function<Jedis, T> function) {
     if (!this.isEnabled || this.pool == null || this.pool.isClosed()) {
       this.plugin.getLogger().info("Redis is not enabled or connection pool is closed.");
       return null;
@@ -291,38 +297,6 @@ public class RedisDatabaseGateway implements DatabaseGateway {
     } catch (Exception e) {
       this.plugin.getLogger().severe("SEVERE - Error executing Redis command: " + e);
       return null;
-    }
-  }
-
-  /**
-   * Executes a Redis command without returning a result.
-   *
-   * @param consumer The consumer to execute with a Jedis resource
-   * @return true if the command executed successfully, false otherwise
-   */
-  private boolean executeVoid(Consumer<Jedis> consumer) {
-    if (!isEnabled || pool == null || pool.isClosed()) {
-      this.plugin.getLogger().info("Redis is not enabled or connection pool is closed.");
-      return false;
-    }
-
-    try (Jedis jedis = pool.getResource()) {
-      consumer.accept(jedis);
-      return true;
-    } catch (JedisConnectionException e) {
-      this.plugin.getLogger().warning("WARNING - Redis connection lost, attempting to reconnect... " + e);
-      if (connect()) {
-        try (Jedis jedis = pool.getResource()) {
-          consumer.accept(jedis);
-          return true;
-        } catch (Exception innerEx) {
-          this.plugin.getLogger().severe("SEVERE - Failed to execute Redis command after reconnect: " + innerEx);
-        }
-      }
-      return false;
-    } catch (Exception e) {
-      this.plugin.getLogger().severe("SEVERE - Error executing Redis command: " + e);
-      return false;
     }
   }
 

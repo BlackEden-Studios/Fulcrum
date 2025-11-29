@@ -10,17 +10,15 @@ import com.bestudios.fulcrum.api.configuration.DefaultConfigurationHolder;
 import com.bestudios.fulcrum.api.configuration.DefaultConfigurationsRegistry;
 import com.bestudios.fulcrum.api.database.DatabaseGateway;
 import com.bestudios.fulcrum.api.service.ServicesRegistry;
-import com.bestudios.fulcrum.api.util.Lock;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.plugin.java.JavaPlugin;
-import org.checkerframework.checker.units.qual.C;
 import org.jetbrains.annotations.NotNull;
 
-import javax.imageio.spi.ServiceRegistry;
 import java.io.File;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Level;
 
 /**
@@ -70,7 +68,7 @@ public abstract class FulcrumPlugin extends JavaPlugin{
   /** Registry for configurations*/
   private ConfigurationsRegistry<YamlConfiguration> configurationsRegistry;
   /** Service registry */
-  private ServiceRegistry servicesRegistry;
+  protected ServicesRegistry servicesRegistry;
   /** Debug mode flag */
   private boolean debugMode;
 
@@ -127,9 +125,11 @@ public abstract class FulcrumPlugin extends JavaPlugin{
   /**
    * Initializes the registries for the plugin.
    * This method is called during plugin initialization.
+   * <p>
+   * Can be overridden to add additional registries
    */
-  private void initializeRegistries() {
-    this.commandsRegistry = new DefaultCommandsRegistry(this);
+  protected void initializeRegistries() {
+    this.commandsRegistry       = new DefaultCommandsRegistry(this);
     this.configurationsRegistry = new DefaultConfigurationsRegistry(this);
   }
 
@@ -137,17 +137,11 @@ public abstract class FulcrumPlugin extends JavaPlugin{
    * Registers the base configuration file (config.yml) with the ConfigurationsRegistry.
    */
   private void registerBaseConfiguration() {
-    ConfigurationHolder<YamlConfiguration> configHolder = new DefaultConfigurationHolder(this,
-            .setFileName(configurationFileName("config"))
-            .setDataFolder(getDataFolder())
-            .build();
-
-    if (configHolder != null) {
-      configurationsRegistry.register("config", configHolder);
-      getLogger().info("Base configuration (config.yml) registered successfully.");
-    } else {
-      getLogger().severe("Failed to register base configuration!");
-    }
+    configurationsRegistry.register(
+      "config",
+      new DefaultConfigurationHolder(this, getDataFolder(), new File(getDataFolder(), configurationFileName("config")))
+    );
+    getLogger().info("Base configuration (config.yml) registered successfully.");
   }
 
   /**
@@ -157,25 +151,20 @@ public abstract class FulcrumPlugin extends JavaPlugin{
   private void registerLanguageConfiguration() {
     // Get the language file name from config.yml (default to "en.yml")
     ConfigurationHolder<?> configHolder = configurationsRegistry.getHolder("config");
-    // Define the language file name
+    assert configHolder != null;
+    // Define the language folder
+    File languageFolder = new File(getDataFolder(), "languages");
+    // Define the language file
     String languageFileName = configHolder.getConfig() != null ?
             configurationFileName(configHolder.getConfig().getString( "language", DEFAULT_LANGUAGE)) :
             configurationFileName(DEFAULT_LANGUAGE);
-    // Define the language folder
-    File languageFolder = new File(getDataFolder(), "languages");
-    // Create the language configuration holder
-    DefaultConfigurationHolder langHolder = new DefaultConfigurationHolder.Builder(this)
-            .setFileName(languageFileName)
-            .setDataFolder(languageFolder)
-            .build();
+    File languageFile = new File(languageFolder, languageFileName);
 
     // Register the language configuration holder
-    if (langHolder != null) {
-      configurationsRegistry.register("language", langHolder);
-      getLogger().info("Language configuration (" + languageFileName + ") registered successfully.");
-    } else {
-      getLogger().severe("Failed to register language configuration!");
-    }
+    configurationsRegistry.register(
+            "language",
+            new DefaultConfigurationHolder(this, languageFolder, languageFile)
+    );
   }
 
   /**
@@ -183,7 +172,6 @@ public abstract class FulcrumPlugin extends JavaPlugin{
    * Command format: /{plugin_name} debug
    */
   private void registerDebugCommand() {
-    String pluginName = getName().toLowerCase();
 
     // Create the debug command wrapper
     CommandWrapper debugCommand = new CommandWrapper.Builder()
@@ -195,18 +183,10 @@ public abstract class FulcrumPlugin extends JavaPlugin{
             })
             .build();
 
-    // Create a map containing the debug command for the root *plugin_name*
-    Map<String, CommandWrapper> commands = new HashMap<>();
-    commands.put("debug", debugCommand);
-
     // Register the command with the CommandsRegistry
-    boolean registered = commandsRegistry.register(pluginName, commands);
-
-    if (registered) {
+    if (commandsRegistry.register(this.getName().toLowerCase(), Map.of("debug", debugCommand)))
       getLogger().info("Debug command registered successfully.");
-    } else {
-      getLogger().warning("Failed to register debug command.");
-    }
+    else getLogger().warning("Failed to register debug command.");
   }
 
   /**
@@ -226,23 +206,27 @@ public abstract class FulcrumPlugin extends JavaPlugin{
    * @return true if registration was successful, false otherwise
    */
   protected boolean registerCommands(@NotNull String commandName, @NotNull Map<String, CommandWrapper> commands) {
+    // Validate command name and commands map
     if (commandName.isEmpty() || commands.isEmpty()) {
       getLogger().warning("Cannot register commands: command name or commands map is empty.");
       return false;
     }
-    if (!(commandsRegistry instanceof DefaultCommandsRegistry)) {
-      getLogger().severe("CommandsRegistry is not an instance of DefaultCommandsRegistry. Cannot register commands.");
-      return false;
-    }
-
+    // Register the commands
     return commandsRegistry.register(commandName, commands);
   }
 
+  /**
+   * Sets the debug mode flag.
+   * @param debugMode true to enable debug mode, false to disable
+   */
   public void setDebugMode(boolean debugMode) {
     this.debugMode = debugMode;
     getLogger().setLevel(debugMode ? Level.CONFIG : Level.INFO);
   }
 
+  /**
+   * Toggles the debug mode flag.
+   */
   public void toggleDebugMode() {
     setDebugMode(!debugMode);
   }
@@ -260,7 +244,7 @@ public abstract class FulcrumPlugin extends JavaPlugin{
     return commandsRegistry;
   }
 
-  public ConfigurationsRegistry getConfigurationsRegistry() {
+  public ConfigurationsRegistry<YamlConfiguration> getConfigurationsRegistry() {
     return configurationsRegistry;
   }
 
