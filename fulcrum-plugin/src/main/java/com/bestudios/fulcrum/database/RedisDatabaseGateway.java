@@ -13,10 +13,8 @@ import redis.clients.jedis.JedisPool;
 import redis.clients.jedis.JedisPoolConfig;
 import redis.clients.jedis.exceptions.JedisConnectionException;
 
-import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.RejectedExecutionException;
-import java.util.function.Consumer;
 import java.util.function.Function;
 
 /**
@@ -49,7 +47,7 @@ public class RedisDatabaseGateway implements DatabaseGateway {
   /** Maximum number of connections in the pool */
   private int maxConnections;
   /** Flag indicating if Redis is enabled */
-  private boolean isEnabled;
+  private boolean enabled;
   /** Reference to the Fulcrum plugin */
   private final FulcrumPlugin plugin;
 
@@ -60,7 +58,7 @@ public class RedisDatabaseGateway implements DatabaseGateway {
    */
   public RedisDatabaseGateway(FulcrumPlugin pluginRef) {
     this.plugin = pluginRef;
-    this.isEnabled = false;
+    this.enabled = false;
   }
 
   /**
@@ -98,7 +96,7 @@ public class RedisDatabaseGateway implements DatabaseGateway {
     // Close the connection pool
     if (pool != null && !pool.isClosed()) {
       pool.close();
-      this.isEnabled = false;
+      this.enabled = false;
       this.plugin.getLogger().info("Redis connection pool has been shut down.");
       return true;
     }
@@ -112,7 +110,7 @@ public class RedisDatabaseGateway implements DatabaseGateway {
    */
   @Override
   public boolean isEnabled() {
-    return isEnabled;
+    return enabled;
   }
 
   /**
@@ -259,11 +257,11 @@ public class RedisDatabaseGateway implements DatabaseGateway {
     // Test the connection
     try (Jedis jedis = this.pool.getResource()) {
       jedis.ping();
-      this.isEnabled = true;
+      this.enabled = true;
       this.plugin.getLogger().info("Successfully connected to Redis server at " + this.host + ":" + this.port);
       return true;
     } catch (Exception e) {
-      this.isEnabled = false;
+      this.enabled = false;
       this.plugin.getLogger().severe("SEVERE - Failed to connect to Redis server: " + e);
       return false;
     }
@@ -277,7 +275,7 @@ public class RedisDatabaseGateway implements DatabaseGateway {
    * @return The result of the function, or null if an error occurred
    */
   private <T> @Nullable T execute(Function<Jedis, T> function) {
-    if (!this.isEnabled || this.pool == null || this.pool.isClosed()) {
+    if (!this.enabled || this.pool == null || this.pool.isClosed()) {
       this.plugin.getLogger().info("Redis is not enabled or connection pool is closed.");
       return null;
     }

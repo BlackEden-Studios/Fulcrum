@@ -1,6 +1,5 @@
 package com.bestudios.fulcrum.database;
 
-import com.bestudios.fulcrum.api.basic.FulcrumPlugin;
 import com.bestudios.fulcrum.api.database.DatabaseGateway;
 import com.bestudios.fulcrum.api.database.DatabaseQuery;
 
@@ -28,6 +27,7 @@ public class RedisQuery implements DatabaseQuery {
   public RedisQuery(String service, String path) {
     query = service + ":" + path;
   }
+
   @Override
   public String value() {
     return query;
