@@ -153,18 +153,6 @@ public class CommandTree implements CommandExecutor, TabCompleter {
   }
 
   /**
-   * Registers a custom tab completer for a command path.
-   * This allows for custom tab completion logic for specific commands.
-   *
-   * @param path       The command path, e.g., "command subcommand"
-   * @param completer  The function to handle tab completion for this command node
-   * @param permission The permission required to execute this command
-   */
-  public CommandTree registerTabCompleter(String path, TabCompleteFunction completer, String permission) {
-    return registerTabCompleter(path, completer);
-  }
-
-  /**
    * Registers a command from a {@link CommandWrapper}.
    * This is a convenience method for registering a command with the same path, action, and permission as the wrapper.
    *
@@ -172,7 +160,7 @@ public class CommandTree implements CommandExecutor, TabCompleter {
    */
   public CommandTree registerFromCommandWrapper(@NotNull CommandWrapper command) {
     registerCommand(command.path(), command.action(), command.permission(), command.isPlayerCommand());
-    registerTabCompleter(command.path(), command.tabCompleter(), command.permission());
+    registerTabCompleter(command.path(), command.tabCompleter());
 
     return this;
   }
@@ -187,9 +175,12 @@ public class CommandTree implements CommandExecutor, TabCompleter {
    * @return true if the command was handled successfully, false otherwise
    */
   @Override
-  public boolean onCommand(@NotNull CommandSender sender, @NotNull Command command,
-                           @NotNull String label, @NotNull String[] args) {
-
+  public boolean onCommand(
+          @NotNull CommandSender sender,
+          @NotNull Command command,
+          @NotNull String label,
+          @NotNull String[] args
+  ) {
     // 1. Base Checks
     if (basePermission != null && !sender.hasPermission(basePermission)) {
       sender.sendMessage(Component.text("You don't have permission to use this command!")
