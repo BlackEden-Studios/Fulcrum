@@ -30,7 +30,8 @@ public class CommandUtils {
   public static List<String> filterCompletions(@NotNull List<String> possibilities, @NotNull String partial) {
     return possibilities.stream()
                         .filter(s -> s.toLowerCase(DEFAULT_LOCALE)
-                                .startsWith(partial.toLowerCase(DEFAULT_LOCALE)))
+                                              .startsWith(partial.toLowerCase(DEFAULT_LOCALE))
+                        )
                         .collect(Collectors.toList());
   }
 
@@ -44,18 +45,18 @@ public class CommandUtils {
    */
   public static List<String> playerTabCompletions(CommandContext context, int playerArgIndex) {
     // 1. Check if there are enough arguments to provide the player argument
-    if (context.remainingArgs().length <= playerArgIndex) {
-      String partial = context.remainingArgs().length > (playerArgIndex - 1) ?
-              context.remainingArgs()[(playerArgIndex - 1)] :
-              "";
+    if (context.remainingArgs().size() <= playerArgIndex) return List.of();
 
-      return Bukkit.getOnlinePlayers().stream()
-              .map(Player::getName)
-              .filter(name -> name.toLowerCase(DEFAULT_LOCALE)
-                      .startsWith(partial.toLowerCase(DEFAULT_LOCALE)))
-              .collect(Collectors.toList());
-    }
-    return List.of();
+    return Bukkit.getOnlinePlayers()
+                 .stream()
+                 .map(Player::getName)
+                 .filter(name -> name.toLowerCase(DEFAULT_LOCALE)
+                                             .startsWith(context.remainingArgs().get(playerArgIndex)
+                                                                                .toLowerCase(DEFAULT_LOCALE)
+                                             )
+                 )
+                 .collect(Collectors.toList());
+
   }
 
   /**
@@ -64,14 +65,14 @@ public class CommandUtils {
    * If the target player is not found or not online, it sends an error message.
    *
    * @param context        The command context
-   * @param playerArgIndex The index of the argument where the player name is expected (starting at 1)
+   * @param playerArgIndex The index of the argument where the player name is expected
    * @return The target player or null if not found
    */
   @Nullable
   public static Player getTargetPlayer(CommandContext context, int playerArgIndex, boolean implicitSender) {
     // 1. Check if there are enough arguments to provide the player argument
-    if (context.remainingArgs().length >= playerArgIndex)
-      return Bukkit.getPlayer(context.remainingArgs()[playerArgIndex - 1]);
+    if (context.remainingArgs().size() > playerArgIndex)
+      return Bukkit.getPlayer(context.remainingArgs().get(playerArgIndex));
     // 2. Check if the sender implicitly provides the player argument
     if (context.isPlayer() && implicitSender) return context.getPlayer();
     // 3. No arguments and console sender: return null
@@ -87,7 +88,7 @@ public class CommandUtils {
    * 3. Otherwise, return null.
    *
    * @param context        The command context
-   * @param playerArgIndex The index of the argument (starting at 1)
+   * @param playerArgIndex The index of the argument (starting at 0)
    * @return A CompletableFuture containing the OfflinePlayer or null
    */
   public static CompletableFuture<OfflinePlayer> getTargetOfflinePlayerAsync(
@@ -96,11 +97,11 @@ public class CommandUtils {
           boolean implicitSender
   ) {
     // 1. Check if the user provided a specific argument
-    if (context.remainingArgs().length >= playerArgIndex)
+    if (context.remainingArgs().size() > playerArgIndex)
       // Run the lookup on a separate thread to avoid blocking the main server tick
       return CompletableFuture.supplyAsync(() -> {
         // This method might trigger a web request to Mojang
-        return Bukkit.getOfflinePlayer(context.remainingArgs()[playerArgIndex - 1]);
+        return Bukkit.getOfflinePlayer(context.remainingArgs().get(playerArgIndex));
       });
     // 2. Fallback: If no argument is provided, use the sender if they are a player
     if (context.isPlayer() && implicitSender) { return CompletableFuture.completedFuture(context.getPlayer()); }
