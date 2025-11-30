@@ -11,9 +11,9 @@ import org.bukkit.scheduler.BukkitTask;
 
 public final class Fulcrum extends FulcrumPlugin {
 
-  private DatabaseGateway database = null;
+  private DatabaseGateway database;
 
-  private BukkitTask timeTracker = null;
+  private BukkitTask timeTracker;
 
   public static Fulcrum getInstance() {
     return getPlugin(Fulcrum.class);
@@ -91,8 +91,12 @@ public final class Fulcrum extends FulcrumPlugin {
     return database;
   }
 
+  /**
+   * A lock that validates operations on the services
+   */
   public static final class FulcrumLock implements Lock {
     private FulcrumLock() {}
+
     @Override
     public void lock() {}
   }

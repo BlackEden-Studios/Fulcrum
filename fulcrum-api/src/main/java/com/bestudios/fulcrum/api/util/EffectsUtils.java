@@ -4,6 +4,7 @@ import org.bukkit.Registry;
 import org.bukkit.potion.PotionEffectType;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.Locale;
 import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -58,7 +59,7 @@ public final class EffectsUtils {
   @Nullable
   public static PotionEffectType getEffectByName(String name) {
     if (name == null) return null;
-    return POTION_MAP.get(name.toLowerCase());
+    return POTION_MAP.get(name.toLowerCase(Locale.US));
   }
 
   // Private constructor to prevent instantiation of utility class

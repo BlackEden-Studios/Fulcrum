@@ -16,6 +16,7 @@ import org.bukkit.plugin.java.JavaPlugin;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.File;
+import java.util.Locale;
 import java.util.Map;
 import java.util.logging.Level;
 
@@ -36,10 +37,10 @@ import java.util.logging.Level;
  *   <li>Simple API for child plugins to register custom commands</li>
  * </ul>
  * <p>
- * Child plugins should override {@link #registerAdditionalCommands()} and {@link #additionalInitializationTasks()} to perform custom initialization
- * tasks such as registering event listeners, scheduling tasks, or setting up
- * additional configurations. Always call {@code super.onEnable()} to ensure
- * proper initialization of the base functionality.
+ * Child plugins should override {@link #registerAdditionalCommands()} and {@link #additionalInitializationTasks()}
+ * to perform custom initialization tasks such as registering event listeners, scheduling tasks, or setting up
+ * additional configurations. Always call {@code super.onEnable()} to ensure proper initialization
+ * of the base functionality.
  * <p>
  * The same goes for {@link #additionalTerminationTasks()} in {@link #onDisable()} to handle any cleanup tasks.
  * <p>
@@ -68,7 +69,7 @@ public abstract class FulcrumPlugin extends JavaPlugin{
   /** Service registry */
   protected ServicesRegistry servicesRegistry;
   /** Debug mode flag */
-  private boolean debugMode;
+  private boolean debug;
 
   /**
    * This method is called when the plugin is enabled.
@@ -113,10 +114,13 @@ public abstract class FulcrumPlugin extends JavaPlugin{
 
   /** Allows child classes to show the plugin title in the console */
   abstract protected void showPluginTitle();
+
   /** Allows child classes to register additional commands */
   abstract protected void registerAdditionalCommands();
+
   /** Allows child classes to perform additional initialization tasks */
   abstract protected void additionalInitializationTasks();
+
   /** Allows child classes to perform additional termination tasks */
   abstract protected void additionalTerminationTasks();
 
@@ -182,7 +186,7 @@ public abstract class FulcrumPlugin extends JavaPlugin{
             .build();
 
     // Register the command with the CommandsRegistry
-    if (commandsRegistry.register(this.getName().toLowerCase(), Map.of("debug", debugCommand)))
+    if (commandsRegistry.register(this.getName().toLowerCase(Locale.US), Map.of("debug", debugCommand)))
       getLogger().info("Debug command registered successfully.");
     else getLogger().warning("Failed to register debug command.");
   }
@@ -218,7 +222,7 @@ public abstract class FulcrumPlugin extends JavaPlugin{
    * @param debugMode true to enable debug mode, false to disable
    */
   public void setDebugMode(boolean debugMode) {
-    this.debugMode = debugMode;
+    this.debug = debugMode;
     getLogger().setLevel(debugMode ? Level.CONFIG : Level.INFO);
   }
 
@@ -226,7 +230,7 @@ public abstract class FulcrumPlugin extends JavaPlugin{
    * Toggles the debug mode flag.
    */
   public void toggleDebugMode() {
-    setDebugMode(!debugMode);
+    setDebugMode(!debug);
   }
 
   /**
@@ -235,7 +239,7 @@ public abstract class FulcrumPlugin extends JavaPlugin{
    * @return true if debug mode is enabled, false otherwise
    */
   public boolean isDebugMode() {
-    return debugMode;
+    return debug;
   }
 
   public CommandsRegistry<CommandTree, CommandWrapper> getCommandsRegistry() {
