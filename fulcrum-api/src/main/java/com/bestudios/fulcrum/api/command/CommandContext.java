@@ -6,6 +6,8 @@ import org.bukkit.entity.Player;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.List;
+
 /**
  * Context for command execution, encapsulating sender, command, subcommands, and remaining arguments.
  * This allows commands to access the sender, command name, full path, and remaining arguments easily.
@@ -15,7 +17,12 @@ import org.jetbrains.annotations.Nullable;
  * @param subcommands   The subcommands used in the command path (e.g., "sub1 sub2" in "root sub1 sub2")
  * @param remainingArgs The remaining arguments after the command path (e.g., "remaining" in "root subs remaining")
  */
-public record CommandContext(CommandSender sender, Command command, String[] subcommands, String[] remainingArgs) {
+public record CommandContext(
+        CommandSender sender,
+        Command command,
+        List<String> subcommands,
+        List<String> remainingArgs
+) {
 
   /**
    * Check if the command context has subcommands.
@@ -24,12 +31,12 @@ public record CommandContext(CommandSender sender, Command command, String[] sub
    */
   @Contract(pure = true)
   public boolean hasSubcommands() {
-    return subcommands.length > 0;
+    return !subcommands.isEmpty();
   }
 
   @Contract(pure = true)
   public @Nullable String getSubcommand(int index) {
-    return index < subcommands.length && index > 0 ? subcommands[index-1] : null;
+    return index < subcommands.size() && index > 0 ? subcommands.get(index) : null;
   }
 
   /**
@@ -39,7 +46,7 @@ public record CommandContext(CommandSender sender, Command command, String[] sub
    */
   @Contract(pure = true)
   public boolean hasArgs() {
-    return remainingArgs.length > 0;
+    return !remainingArgs.isEmpty();
   }
 
   /**
@@ -50,7 +57,7 @@ public record CommandContext(CommandSender sender, Command command, String[] sub
    */
   @Contract(pure = true)
   public @Nullable String getArg(int index) {
-    return index < remainingArgs.length && index > 0 ? remainingArgs[index-1] : null;
+    return index < remainingArgs.size() && index > 0 ? remainingArgs.get(index) : null;
   }
 
   /**
@@ -62,7 +69,7 @@ public record CommandContext(CommandSender sender, Command command, String[] sub
    */
   @Contract(pure = true)
   public String getArg(int index, String defaultValue) {
-    return index < remainingArgs.length ? remainingArgs[index] : defaultValue;
+    return getArg(index) != null ? getArg(index) : defaultValue;
   }
 
   /**

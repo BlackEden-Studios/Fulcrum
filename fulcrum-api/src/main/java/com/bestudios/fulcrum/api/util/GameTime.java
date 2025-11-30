@@ -9,6 +9,7 @@ import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.time.temporal.ChronoUnit;
 import java.time.temporal.TemporalAdjusters;
+import java.util.Objects;
 
 /**
  * Utility class for calculating time-related values in Fulcrum plugins.
@@ -104,7 +105,10 @@ public class GameTime {
    * @throws IllegalArgumentException if minuteMark is not between 0 and 59
    */
   public static LocalDateTime timeOfNextMark(@NotNull LocalDateTime start, @NotNull Integer minute) {
-    return timeOfNextMark(start, null, minute);
+    validateMinutes(minute);
+    return start.truncatedTo(ChronoUnit.MINUTES)
+                .plusHours(start.getMinute() > minute ? 1 : 0)
+                .withMinute(minute);
   }
 
   /**
@@ -128,7 +132,7 @@ public class GameTime {
    * @return The time of the next occurrence of the specified time
    * @throws IllegalArgumentException if hour or minute values are out of range
    */
-  public static LocalDateTime timeOfNextMark(Integer hour, Integer minute) {
+  public static LocalDateTime timeOfNextMark(@NotNull Integer hour, @NotNull Integer minute) {
     return timeOfNextMark(LocalDateTime.now(), hour, minute);
   }
 
@@ -144,20 +148,15 @@ public class GameTime {
    */
   public static LocalDateTime timeOfNextMark(
           @NotNull LocalDateTime start,
-          Integer hour,
+          @NotNull Integer hour,
           @NotNull Integer minute
   ) {
     validateHours(hour);
-    validateMinutes(minute);
-
     LocalDateTime candidate = start.truncatedTo(ChronoUnit.MINUTES)
-                                   .withMinute(minute);
+                                   .plusDays(start.getHour() > hour ? 1 : 0)
+                                   .withHour(hour);
 
-    if (hour != null) {
-      candidate = candidate.withHour(hour);
-      if (!candidate.isAfter(start)) return candidate.plusDays(1);
-    } else if (!candidate.isAfter(start)) return candidate.plusHours(1);
-    return candidate;
+    return timeOfNextMark(candidate, minute);
   }
 
   /**
@@ -170,7 +169,7 @@ public class GameTime {
    * @throws IllegalArgumentException if hour or minute values are out of range
    */
   public static long secondsUntilNextMark(LocalDateTime start, Integer hour, Integer minute) {
-    return start.until(timeOfNextMark(hour, minute), ChronoUnit.SECONDS);
+    return start.until(timeOfNextMark(start, hour, minute), ChronoUnit.SECONDS);
   }
 
   /**
@@ -196,7 +195,7 @@ public class GameTime {
    * @throws IllegalArgumentException if minuteMark is not between 0 and 59
    */
   public static long secondsUntilNextMark(@NotNull LocalDateTime start, Integer minute) {
-    return secondsUntilNextMark(start, null, minute);
+    return start.until(timeOfNextMark(start, minute), ChronoUnit.SECONDS);
   }
 
   /**
@@ -208,7 +207,7 @@ public class GameTime {
    * @throws IllegalArgumentException if minuteMark is not between 0 and 59
    */
   public static long secondsUntilNextMark(Integer minute) {
-    return secondsUntilNextMark(LocalDateTime.now(), null, minute);
+    return secondsUntilNextMark(LocalDateTime.now(), minute);
   }
 
   /**
@@ -216,22 +215,19 @@ public class GameTime {
    * For example, with a 15-minute interval, if it's 9:44, this returns seconds until 9:45.
    * If it's 9:46, it returns seconds until 10:00.
    *
-   * @param from The starting time
+   * @param start           The starting time
    * @param intervalMinutes The interval size in minutes (e.g., 15 for quarter-hour intervals)
    * @return The number of seconds until the next interval boundary
    * @throws IllegalArgumentException if intervalMinutes is not a valid divisor of 1440
    */
-  public static long secondsUntilNextInterval(LocalTime from, int intervalMinutes) {
+  public static long secondsUntilNextInterval(LocalTime start, int intervalMinutes) {
     validateHours(intervalMinutes);
     // Check if the interval is a divisor of 1440 (the number of minutes in a day)
     if ((24*60) % intervalMinutes != 0)
       throw new IllegalArgumentException(
               "Interval must be a divisor of 1440 (the number of minutes in a day), got: " + intervalMinutes);
 
-    int currentMinute = from.getMinute() + from.getHour() * 60;
-    int minutesToNextInterval = intervalMinutes - ( currentMinute % intervalMinutes );
-
-    return minutesToNextInterval * 60L;
+    return (intervalMinutes - ( (start.getHour() * 60 + start.getMinute()) % intervalMinutes ) ) * 60L;
   }
 
   /**
@@ -274,7 +270,7 @@ public class GameTime {
    * @throws IllegalArgumentException if the input is not a valid minute
    */
   private static void validateMinutes(Integer minute) {
-    if (minute == null) return;
+    Objects.requireNonNull(minute, "Minute mark cannot be null");
     if (minute < 0 || minute > 59)
       throw new IllegalArgumentException("Minute mark must be between 0 and 59, got: " + minute);
   }
@@ -285,7 +281,7 @@ public class GameTime {
    * @throws IllegalArgumentException if the input is not a valid hour
    */
   private static void validateHours(Integer hour) {
-    if (hour == null) return;
+    Objects.requireNonNull(hour, "Hour mark cannot be null");
     if (hour < 0 || hour > 23)
       throw new IllegalArgumentException("Hour slice must be between 0 and 23, got: " + hour);
   }

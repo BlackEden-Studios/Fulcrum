@@ -109,7 +109,7 @@ public class CommandTree implements CommandExecutor, TabCompleter {
    * @param isPlayerCommand If true, this action will only be executed by players.
    */
   public CommandTree registerCommand(@NotNull String path, CommandAction action, String permission, boolean isPlayerCommand) {
-    this.findTargetNode(path.split("\\s+"), true).node()
+    this.findTargetNode(path.split("\\s+"), true).node
         .setAction(action, permission, isPlayerCommand);
 
     return this;
@@ -146,9 +146,7 @@ public class CommandTree implements CommandExecutor, TabCompleter {
    * @param completer The function to handle tab completion for this command node
    */
   public CommandTree registerTabCompleter(String path, TabCompleteFunction completer) {
-    this.findTargetNode(path.split("\\s+"), true).node()
-        .setTabCompleter(completer);
-
+    this.findTargetNode(path.split("\\s+"), true).node.setTabCompleter(completer);
     return this;
   }
 
@@ -194,13 +192,13 @@ public class CommandTree implements CommandExecutor, TabCompleter {
     }
 
     // 2. Traversal
-    TraversalResult result = findTargetNode(args, false);
+    TraversalState result = findTargetNode(args, false);
 
     // 3. Construct Context with the found arguments
-    CommandContext context = new CommandContext(sender, command, result.processedArgs(), result.remainingArgs());
+    CommandContext context = new CommandContext(sender, command, result.processedArgs, result.remainingArgs);
 
     // 4. Execution
-    return executeNode(result.node(), context);
+    return executeNode(result.node, context);
   }
 
   /**
@@ -225,50 +223,21 @@ public class CommandTree implements CommandExecutor, TabCompleter {
       return Collections.emptyList();
 
     // 2. Traversal
-    TraversalResult result = findTargetNode(args, false);
+    TraversalState result = findTargetNode(args, false);
 
     // 2.1 Check if the node has a permission, if any
-    if (result.node().hasPermission() && !sender.hasPermission(result.node().getPermission()))
+    if (result.node.hasPermission() && !sender.hasPermission(result.node.getPermission()))
       return Collections.emptyList();
 
     // 3. Get the completions for the current node
-    CommandContext context = new CommandContext(sender, command, result.processedArgs(), result.remainingArgs());
+    CommandContext context = new CommandContext(sender, command, result.processedArgs, result.remainingArgs);
     List<String> completions = result.node.complete(context);
 
     // 4. Get partial input for filtering
-    String partial = result.remainingArgs.length > 0 ? result.remainingArgs[0] : "";
+    String partial = !result.remainingArgs.isEmpty() ? result.remainingArgs.getFirst() : "";
 
     // 5. Filter based on partial input
     return CommandUtils.filterCompletions(completions, partial);
-  }
-
-  /**
-   * Represents the result of a command traversal.
-   * <p>
-   * This is used to store the deepest node matching the arguments, along with the command context for execution.
-   * @param node          The deepest node matching the arguments.
-   * @param processedArgs The arguments that were processed up to the deepest node.
-   * @param remainingArgs The remaining arguments after the deepest node was reached.
-   */
-  private record TraversalResult(CommandNode node, String[] processedArgs, String[] remainingArgs) {}
-
-  /**
-   * State holder for command traversal.
-   * <p>
-   * This holds the state as we iterate through the arguments.
-   */
-  private static class TraversalState {
-    CommandNode currentNode;
-    List<String> processedArgs;
-    List<String> remainingArgs;
-    boolean pathBroken;
-
-    TraversalState(CommandNode root) {
-      this.currentNode = root;
-      this.processedArgs = new ArrayList<>();
-      this.remainingArgs = new ArrayList<>();
-      this.pathBroken = false;
-    }
   }
 
   /**
@@ -276,10 +245,10 @@ public class CommandTree implements CommandExecutor, TabCompleter {
    *
    * @param args                The arguments to traverse with.
    * @param createNewNodeIfNull If true, a new node will be created if none exists for the current argument.
-   * @return The traversal result containing the deepest node and remaining arguments.
+   * @return The traversal state containing the deepest node and remaining arguments.
    */
   @Contract("_, _ -> new")
-  private @NotNull TraversalResult findTargetNode(String @NotNull [] args, boolean createNewNodeIfNull) {
+  private @NotNull TraversalState findTargetNode(String @NotNull [] args, boolean createNewNodeIfNull) {
     // Start at root with empty subcommands
     TraversalState state = new TraversalState(rootNode);
     //
@@ -292,12 +261,12 @@ public class CommandTree implements CommandExecutor, TabCompleter {
       }
 
       // Try to find the child
-      CommandNode child = createNewNodeIfNull ? state.currentNode.getOrCreateChild(arg) :
-                                                state.currentNode.getChild(arg);
+      CommandNode child = createNewNodeIfNull ? state.node.getOrCreateChild(arg) :
+                                                state.node.getChild(arg);
 
       if (child != null) {
         // If child found: it becomes the current node for the next iteration
-        state.currentNode = child;
+        state.node = child;
         state.processedArgs.add(arg);
       } else {
         // If no child found: the path ends here.
@@ -307,11 +276,7 @@ public class CommandTree implements CommandExecutor, TabCompleter {
       }
     }
 
-    return new TraversalResult(
-            state.currentNode,
-            state.processedArgs.toArray(String[]::new),
-            state.remainingArgs.toArray(String[]::new)
-    );
+    return state;
   }
 
   /**
@@ -354,7 +319,7 @@ public class CommandTree implements CommandExecutor, TabCompleter {
    * Each node can have child nodes, an action to execute, a permission required to execute the action,
    * and a tab completer for custom tab completion logic.
    */
-  private static class CommandNode {
+  static class CommandNode {
 
     /** The children of this command node, mapping subcommand names to their respective CommandNodes */
     private final Map<String, CommandNode> children = new ConcurrentHashMap<>();
