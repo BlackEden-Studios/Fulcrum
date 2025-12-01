@@ -105,10 +105,7 @@ public class GameTime {
    * @throws IllegalArgumentException if minuteMark is not between 0 and 59
    */
   public static LocalDateTime timeOfNextMark(@NotNull LocalDateTime start, @NotNull Integer minute) {
-    validateMinutes(minute);
-    return start.truncatedTo(ChronoUnit.MINUTES)
-                .plusHours(start.getMinute() > minute ? 1 : 0)
-                .withMinute(minute);
+    return timeOfNextMark(start, minute <= start.getMinute() ? (start.getHour()+1)%24 : start.getHour(), minute);
   }
 
   /**
@@ -152,11 +149,13 @@ public class GameTime {
           @NotNull Integer minute
   ) {
     validateHours(hour);
-    LocalDateTime candidate = start.truncatedTo(ChronoUnit.MINUTES)
-                                   .plusDays(start.getHour() > hour ? 1 : 0)
-                                   .withHour(hour);
+    validateMinutes(minute);
 
-    return timeOfNextMark(candidate, minute);
+    LocalDateTime then = start.truncatedTo(ChronoUnit.MINUTES)
+                              .withHour (hour)
+                              .withMinute (minute);
+
+    return then.isBefore(start) || then.isEqual(start) ? then.plusDays(1) : then;
   }
 
   /**
@@ -169,7 +168,8 @@ public class GameTime {
    * @throws IllegalArgumentException if hour or minute values are out of range
    */
   public static long secondsUntilNextMark(LocalDateTime start, Integer hour, Integer minute) {
-    return start.until(timeOfNextMark(start, hour, minute), ChronoUnit.SECONDS);
+    long seconds = start.until(timeOfNextMark(start, hour, minute), ChronoUnit.SECONDS);
+    return seconds == 0 ? (60 * 60 * 24) : seconds;
   }
 
   /**
@@ -189,13 +189,14 @@ public class GameTime {
    * Calculates the number of seconds from a given time until the next occurrence of a specific minute mark.
    * Useful for testing or calculating delays based on a specific starting time.
    *
-   * @param start      The starting time
+   * @param start  The starting time
    * @param minute The target minute mark (0-59)
    * @return The number of seconds until the next occurrence
    * @throws IllegalArgumentException if minuteMark is not between 0 and 59
    */
   public static long secondsUntilNextMark(@NotNull LocalDateTime start, Integer minute) {
-    return start.until(timeOfNextMark(start, minute), ChronoUnit.SECONDS);
+    long seconds = start.until(timeOfNextMark(start, minute), ChronoUnit.SECONDS);
+    return seconds == 0 ? (60 * 60) : seconds;
   }
 
   /**
@@ -221,7 +222,8 @@ public class GameTime {
    * @throws IllegalArgumentException if intervalMinutes is not a valid divisor of 1440
    */
   public static long secondsUntilNextInterval(LocalTime start, int intervalMinutes) {
-    validateHours(intervalMinutes);
+    if (intervalMinutes <= 0)
+      throw new IllegalArgumentException("Interval must be greater than 0, got: " + intervalMinutes);
     // Check if the interval is a divisor of 1440 (the number of minutes in a day)
     if ((24*60) % intervalMinutes != 0)
       throw new IllegalArgumentException(
