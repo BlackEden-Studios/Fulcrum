@@ -3,7 +3,7 @@ plugins {
 }
 
 allprojects {
-    group = "io.github.BlackEden-Studios"
+    group = "io.github.blackeden-studios"
     version = "0.1-BETA"
 
     repositories {

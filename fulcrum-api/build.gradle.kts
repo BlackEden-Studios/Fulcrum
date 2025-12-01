@@ -27,7 +27,7 @@ mavenPublishing {
 
     signAllPublications()
 
-    coordinates("io.github.BlackEden-Studios", "fulcrum-api", "0.1-BETA")
+    coordinates("io.github.blackeden-studios", "fulcrum-api", "0.1-BETA")
 
     // 4. Metadata required by Central
     pom {
