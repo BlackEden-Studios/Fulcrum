@@ -18,11 +18,6 @@ tasks.test {
     useJUnitPlatform()
 }
 
-java {
-    withSourcesJar()
-    withJavadocJar()
-}
-
 tasks.jar {
     archiveBaseName.set("fulcrum-api")
 }
