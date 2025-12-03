@@ -111,4 +111,14 @@ public class TimerInfo {
   public void setExpirationTime(int expirationTime) {
     this.expirationSecond = expirationTime;
   }
+
+  /**
+   * Checks if the specified timer is valid.
+   * Convenience method for checking if a timer is effectively non-null and valid.
+   * @param timer The timer to check
+   * @return true if the timer is valid, false otherwise
+   */
+  public static boolean isValid(TimerInfo timer) {
+    return timer != null && timer.isValid();
+  }
 }

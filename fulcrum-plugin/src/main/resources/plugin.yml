@@ -7,3 +7,15 @@ prefix: Fulcrum
 softdepend: [VaultAPI, Lands, LuckPerms, ItemsAdder]
 description: Comprehensive framework and API for Minecraft plugin development that streamlines the creation of Paper and Spigot plugins
 website: https://github.com/BlackEden-Studios
+
+commands:
+  debug:
+    description: Toggles debug mode
+    aliases: [f]
+    permission: fulcrum.op
+    permission-message: You do not have permission to use this command.
+
+permissions:
+  fulcrum.op:
+    description: Allows access to all Fulcrum commands
+    default: op

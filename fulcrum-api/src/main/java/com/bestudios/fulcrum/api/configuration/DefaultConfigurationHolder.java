@@ -36,7 +36,7 @@ public class DefaultConfigurationHolder implements ConfigurationHolder<YamlConfi
   /** The configuration data folder. */
   protected File folder;
   /** The configuration file. */
-  protected File file;
+  protected File  file;
   /** The configuration instance. */
   protected YamlConfiguration config;
 
@@ -55,7 +55,7 @@ public class DefaultConfigurationHolder implements ConfigurationHolder<YamlConfi
   ) {
     this.plugin = Objects.requireNonNull(pluginRef, "Plugin reference cannot be null");
     this.folder = Objects.requireNonNull(dataFolder, "Data folder cannot be null");
-    this.file = Objects.requireNonNull(configFile, "Config file cannot be null");
+    this.file   = Objects.requireNonNull(configFile, "Config file cannot be null");
 
     this.validate(Set.of(this.folder), File::mkdirs, "Failed to create data folder");
     this.validate(Set.of(this.file),   File::createNewFile, "Failed to create config file");
@@ -125,7 +125,7 @@ public class DefaultConfigurationHolder implements ConfigurationHolder<YamlConfi
     currentConfig.set("version", version);
     plugin.getLogger().config("Configuration version updated to " + version);
     // Synchronize with defaults resources if available
-    currentConfig.setDefaults(Utils.loadFromResources(plugin, file.getName()));
+    currentConfig.setDefaults(Utils.loadFromResources(plugin, file.getPath()));
     currentConfig.options().copyDefaults(true);
     // Save the updated configuration, if possible
     try {

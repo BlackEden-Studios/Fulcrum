@@ -95,11 +95,11 @@ public abstract class FulcrumPlugin extends JavaPlugin{
     // Register debug command
     registerDebugCommand();
 
-    // Register other commands if needed
-    registerAdditionalCommands();
-
     // Additional initialization tasks can be performed by child classes here
     additionalInitializationTasks();
+
+    // Register other commands if needed
+    registerAdditionalCommands();
 
     getLogger().info("Plugin initialized successfully.");
   }
@@ -177,7 +177,7 @@ public abstract class FulcrumPlugin extends JavaPlugin{
 
     // Create the debug command wrapper
     CommandWrapper debugCommand = new CommandWrapper.Builder()
-            .path("debug")
+            .path(this.getName() + "debug")
             .action(context -> {
               toggleDebugMode();
               context.sender().sendMessage("§aDebug mode " + (isDebugMode() ? "enabled" : "disabled") + ".");

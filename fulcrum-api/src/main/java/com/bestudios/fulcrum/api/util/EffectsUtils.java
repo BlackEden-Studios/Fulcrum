@@ -2,10 +2,12 @@ package com.bestudios.fulcrum.api.util;
 
 import org.bukkit.Registry;
 import org.bukkit.potion.PotionEffectType;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.Locale;
 import java.util.Map;
+import java.util.Objects;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
@@ -57,8 +59,8 @@ public final class EffectsUtils {
    * @return The corresponding PotionEffectType, or null if no match is found
    */
   @Nullable
-  public static PotionEffectType getEffectByName(String name) {
-    if (name == null) return null;
+  public static PotionEffectType getEffectByName(@NotNull String name) {
+    Objects.requireNonNull(name, "Effect name cannot be null");
     return POTION_MAP.get(name.toLowerCase(Locale.US));
   }
 
