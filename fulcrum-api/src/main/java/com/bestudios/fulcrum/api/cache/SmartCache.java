@@ -92,6 +92,16 @@ public class SmartCache<T> {
   }
 
   /**
+   * Retrieves an item from the cache by player UUID.
+   *
+   * @param playerID The UUID of the player
+   * @return The cached item, or the default value if no item exists
+   */
+  public T getOrDefault(@NotNull UUID playerID, T defaultValue) {
+    return this.cache.getOrDefault(Objects.requireNonNull(playerID, NULL_ID_ERROR), defaultValue);
+  }
+
+  /**
    * Removes an item from the cache by player UUID.
    *
    * @param playerID The UUID of the player

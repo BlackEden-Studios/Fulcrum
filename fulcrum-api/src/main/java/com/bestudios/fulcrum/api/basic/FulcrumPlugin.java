@@ -258,4 +258,6 @@ public abstract class FulcrumPlugin extends JavaPlugin{
 
   public abstract DatabaseGateway getDatabaseGateway();
 
+  public abstract ServicesRegistry getServicesRegistry();
+
 }

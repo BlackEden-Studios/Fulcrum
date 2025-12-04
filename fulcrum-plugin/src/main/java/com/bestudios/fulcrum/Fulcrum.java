@@ -2,6 +2,7 @@ package com.bestudios.fulcrum;
 
 import com.bestudios.fulcrum.api.basic.FulcrumPlugin;
 import com.bestudios.fulcrum.api.database.DatabaseGateway;
+import com.bestudios.fulcrum.api.service.ServicesRegistry;
 import com.bestudios.fulcrum.api.util.Lock;
 import com.bestudios.fulcrum.database.RedisDatabaseGateway;
 import com.bestudios.fulcrum.service.FulcrumServicesRegistry;
@@ -89,6 +90,11 @@ public final class Fulcrum extends FulcrumPlugin {
   public DatabaseGateway getDatabaseGateway() {
     if (database == null) database = new RedisDatabaseGateway(this);
     return database;
+  }
+
+  @Override
+  public ServicesRegistry getServicesRegistry() {
+    return this.servicesRegistry;
   }
 
   /**
