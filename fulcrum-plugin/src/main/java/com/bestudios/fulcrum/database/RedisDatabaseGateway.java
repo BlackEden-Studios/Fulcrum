@@ -14,6 +14,7 @@ import redis.clients.jedis.JedisPool;
 import redis.clients.jedis.JedisPoolConfig;
 import redis.clients.jedis.exceptions.JedisConnectionException;
 
+import java.util.Arrays;
 import java.util.Map;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.function.Function;
@@ -131,6 +132,18 @@ public class RedisDatabaseGateway implements DatabaseGateway {
    */
   public RedisQuery createQuery(@NotNull String table, @NotNull String key) {
     return new RedisQuery(table, key);
+  }
+
+  /**
+   * Creates a new RedisQuery object for the given keys.
+   * @param keys The keys to query
+   * @return A new RedisQuery
+   */
+  public RedisQuery createQuery(@NotNull String... keys) {
+    if (keys.length == 0)
+      throw new IllegalArgumentException("Cannot create a Redis query with no keys!");
+
+    return new RedisQuery(String.join(":", keys));
   }
 
   /**

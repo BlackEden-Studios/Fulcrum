@@ -64,6 +64,14 @@ public interface DatabaseGateway extends Service {
   DatabaseQuery createQuery(@NotNull String table, @NotNull String key);
 
   /**
+   * Creates a new database query for the specified keys.
+   *
+   * @param keys The keys to query
+   * @return A new database query
+  */
+  DatabaseQuery createQuery(@NotNull String... keys);
+
+  /**
    * Retrieves a specific field from the database based on the provided query.
    *
    * @param query The database query
