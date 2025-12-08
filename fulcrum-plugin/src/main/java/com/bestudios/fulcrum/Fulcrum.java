@@ -30,7 +30,7 @@ public final class Fulcrum extends FulcrumPlugin {
                         @@@
                        @@@@
                      @@@ @@  @@
-                   @@@   @@   @@@                      Version: 1.0.0         Paper: 1.21         Author: Bestialus
+                   @@@   @@   @@@                   Version: 1.0.0         Paper: 1.21         Author: Bestialus
                  @@@     @@     @@@
                @@@       @@       @@@
              @@@        @@@@        @@@             _____________   ______      _______________  ___   ______   ____

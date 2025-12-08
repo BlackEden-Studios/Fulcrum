@@ -6,6 +6,7 @@ import com.bestudios.fulcrum.api.database.DatabaseGateway;
 import com.bestudios.fulcrum.api.util.Lock;
 import com.bestudios.fulcrum.api.database.DatabaseQuery;
 import org.bukkit.configuration.file.FileConfiguration;
+import org.bukkit.plugin.ServicePriority;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import redis.clients.jedis.Jedis;
@@ -298,4 +299,18 @@ public class RedisDatabaseGateway implements DatabaseGateway {
     }
   }
 
+  @Override
+  public ServicePriority getPriority() {
+    return ServicePriority.Highest;
+  }
+
+  @Override
+  public String getPluginName() {
+    return "Fulcrum";
+  }
+
+  @Override
+  public boolean isAvailable() {
+    return true;
+  }
 }

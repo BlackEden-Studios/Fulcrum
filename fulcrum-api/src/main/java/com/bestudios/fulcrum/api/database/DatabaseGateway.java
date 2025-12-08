@@ -1,5 +1,6 @@
 package com.bestudios.fulcrum.api.database;
 
+import com.bestudios.fulcrum.api.service.Service;
 import com.bestudios.fulcrum.api.util.Lock;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.jetbrains.annotations.NotNull;
@@ -19,7 +20,7 @@ import java.util.Map;
  * @see DatabaseQuery
  * @see Lock
  */
-public interface DatabaseGateway {
+public interface DatabaseGateway extends Service {
 
   /**
    * Initializes the database connection with the provided configuration values.

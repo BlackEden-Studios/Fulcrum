@@ -2,6 +2,7 @@ package com.bestudios.fulcrum.service;
 
 import com.bestudios.fulcrum.Fulcrum;
 import com.bestudios.fulcrum.api.basic.FulcrumPlugin;
+import com.bestudios.fulcrum.api.database.DatabaseGateway;
 import com.bestudios.fulcrum.api.service.ServicesRegistry;
 import com.bestudios.fulcrum.api.service.Service;
 import com.bestudios.fulcrum.api.service.claim.ClaimsService;
@@ -10,6 +11,7 @@ import com.bestudios.fulcrum.api.service.economy.EconomyService;
 import com.bestudios.fulcrum.api.service.messaging.MessageService;
 import com.bestudios.fulcrum.api.service.permission.PermissionsService;
 import com.bestudios.fulcrum.api.service.team.TeamsService;
+import com.bestudios.fulcrum.database.RedisDatabaseGateway;
 import org.bukkit.plugin.RegisteredServiceProvider;
 import org.bukkit.plugin.ServicePriority;
 
@@ -65,6 +67,8 @@ public final class FulcrumServicesRegistry implements ServicesRegistry {
     this.registerService(TeamsService.class, lands);
     // Custom items
     this.registerService(CustomItemsService.class, new ItemsAdderBridge(this.plugin, ServicePriority.Highest));
+    // Database
+    this.registerService(DatabaseGateway.class, plugin.getDatabaseGateway());
     // Messaging
     this.registerService(
             MessageService.class,
