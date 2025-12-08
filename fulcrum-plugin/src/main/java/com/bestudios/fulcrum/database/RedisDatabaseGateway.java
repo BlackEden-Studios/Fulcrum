@@ -115,6 +115,25 @@ public class RedisDatabaseGateway implements DatabaseGateway {
   }
 
   /**
+   * Creates a new RedisQuery object for the given table.
+   * @param table The table to query
+   * @return A new RedisQuery
+   */
+  public RedisQuery createQuery(@NotNull String table) {
+    return new RedisQuery(table);
+  }
+
+  /**
+   * Creates a new RedisQuery object for the given table and key.
+   * @param table The table to query
+   * @param key   The key to query
+   * @return A new RedisQuery
+   */
+  public RedisQuery createQuery(@NotNull String table, @NotNull String key) {
+    return new RedisQuery(table, key);
+  }
+
+  /**
    * Get a single field value.
    *
    * @param query The query to retrieve the field from

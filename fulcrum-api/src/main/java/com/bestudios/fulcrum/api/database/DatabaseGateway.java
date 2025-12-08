@@ -47,6 +47,23 @@ public interface DatabaseGateway extends Service {
   boolean isEnabled();
 
   /**
+   * Creates a new database query for the specified table.
+   *
+   * @param table The table to query
+   * @return A new database query
+   */
+  DatabaseQuery createQuery(@NotNull String table);
+
+  /**
+   * Creates a new database query for the specified table and key.
+   *
+   * @param table The table to query
+   * @param key   The key to query
+   * @return A new database query
+   */
+  DatabaseQuery createQuery(@NotNull String table, @NotNull String key);
+
+  /**
    * Retrieves a specific field from the database based on the provided query.
    *
    * @param query The database query

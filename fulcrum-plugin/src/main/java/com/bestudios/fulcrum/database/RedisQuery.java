@@ -21,11 +21,15 @@ public class RedisQuery implements DatabaseQuery {
   /**
    * Constructs a RedisQuery using the provided service and path.
    *
-   * @param service The FulcrumPlugin instance.
-   * @param path   The specific path for the query.
+   * @param service The service name for the query.
+   * @param path    The specific path for the query.
    */
   public RedisQuery(String service, String path) {
-    query = service + ":" + path;
+    this.query = service + ":" + path;
+  }
+
+  public RedisQuery(String query) {
+    this.query = query;
   }
 
   @Override
