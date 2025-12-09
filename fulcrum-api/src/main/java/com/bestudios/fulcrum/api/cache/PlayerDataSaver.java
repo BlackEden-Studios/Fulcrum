@@ -1,5 +1,6 @@
 package com.bestudios.fulcrum.api.cache;
 
+import java.util.Map;
 import java.util.UUID;
 
 /**
@@ -23,8 +24,9 @@ public interface PlayerDataSaver<T> {
    * - Encapsulate any database or file system operations
    * - Handle any exceptions appropriately
    *
-   * @param playerID The player's unique identifier
+   * @param data     The player data to save
    * @return true if the data was saved successfully, false otherwise
    */
-  boolean save(UUID playerID);
+  boolean save(Map.Entry<UUID, T> data);
+
 }

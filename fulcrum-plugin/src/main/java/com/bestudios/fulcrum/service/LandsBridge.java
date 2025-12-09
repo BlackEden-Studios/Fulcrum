@@ -24,6 +24,7 @@ import org.bukkit.plugin.ServicePriority;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.Map;
 import java.util.Objects;
 import java.util.UUID;
 
@@ -218,7 +219,7 @@ public class LandsBridge implements ClaimsService, TeamsService {
   private final class LandDataSaver implements PlayerDataSaver<Land> {
 
     @Override
-    public boolean save(UUID playerID) {
+    public boolean save(Map.Entry<UUID, Land> data) {
       return false;
     }
   }

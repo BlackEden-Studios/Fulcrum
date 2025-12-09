@@ -9,6 +9,8 @@ import org.bukkit.plugin.Plugin;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.jetbrains.annotations.NotNull;
 
+import java.util.AbstractMap;
+import java.util.Map;
 import java.util.Objects;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
@@ -160,7 +162,7 @@ public class SmartCache<T> {
    * Override this method to implement batch save logic.
    */
   public void saveAllData() {
-    cache.keySet().forEach(dataSaver::save);
+    cache.entrySet().forEach(dataSaver::save);
   }
 
   /**
@@ -176,7 +178,7 @@ public class SmartCache<T> {
 
       // Save data and remove from the cache
       plugin.getLogger().config("Saving data for player: " + playerID);
-      dataSaver.save(playerID);
+      dataSaver.save(new AbstractMap.SimpleEntry<>(playerID, cache.get(playerID)));
       remove(playerID);
     }
   }

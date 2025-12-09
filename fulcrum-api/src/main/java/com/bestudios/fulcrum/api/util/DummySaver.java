@@ -2,6 +2,7 @@ package com.bestudios.fulcrum.api.util;
 
 import com.bestudios.fulcrum.api.cache.PlayerDataSaver;
 
+import java.util.Map;
 import java.util.UUID;
 
 /**
@@ -13,7 +14,7 @@ import java.util.UUID;
 public class DummySaver<T> implements PlayerDataSaver<T> {
 
   @Override
-  public boolean save(UUID playerID) {
+  public boolean save(Map.Entry<UUID, T> data) {
     return true;
   }
 }
