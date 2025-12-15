@@ -15,7 +15,6 @@ import java.util.function.Consumer;
  * The Menu interface extends InventoryHolder to provide a standardized way
  * to create and manage interactive GUIs with clickable items. It handles
  * item placement, clicks actionsMap, and menu updates.
- * </p>
  *
  * @author Bestialus
  * @version 1.0
