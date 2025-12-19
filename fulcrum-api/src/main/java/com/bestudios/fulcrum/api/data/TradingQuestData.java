@@ -1,7 +1,5 @@
 package com.bestudios.fulcrum.api.data;
 
-import org.jetbrains.annotations.Nullable;
-
 import java.util.Map;
 
 /**
@@ -35,10 +33,6 @@ public record TradingQuestData(
     for (Map.Entry<MaterialData, Integer> entry : materials.entrySet())
       if (entry.getKey().namespaceID().equals(namespaceID)) return true;
     return false;
-  }
-
-  public @Nullable MaterialData getMaterialIfRequired(String namespaceID) {
-
   }
 
 }
