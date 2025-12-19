@@ -62,11 +62,11 @@ public interface CustomItemsService extends Service {
   boolean isCustomBlock(@NotNull final String blockNamespaceID);
 
   /**
-   * Gets a regular Bukkit ItemStack and returns its namespace ID
+   * Gets a regular Bukkit ItemStack and returns its namespaceID ID
    *
-   * @param item The ItemStack to get the namespace ID for
+   * @param item The ItemStack to get the namespaceID ID for
    *
-   * @return String representing namespace and ID
+   * @return String representing namespaceID and ID
    */
   @NotNull
   default String getItemNamespaceID(@NotNull final ItemStack item) {
@@ -90,7 +90,7 @@ public interface CustomItemsService extends Service {
    *
    * @param item The ItemStack to get the name for
    *
-   * @return String representing namespace and ID
+   * @return String representing namespaceID and ID
    */
   @NotNull
   default String getItemName(@NotNull final ItemStack item) {
@@ -112,7 +112,7 @@ public interface CustomItemsService extends Service {
   }
 
   /**
-   * Gets a namespace ID and returns its custom stack
+   * Gets a namespaceID ID and returns its custom stack
    * otherwise returns the ItemStack provided as the argument.
    *
    * @param itemNamespaceID The name of the custom item

@@ -108,11 +108,11 @@ public class ItemsAdderBridge implements CustomItemsService {
   }
 
   /**
-   * Gets the namespace ID of the given ItemStack in the format {@code namespace:id}
+   * Gets the namespaceID ID of the given ItemStack in the format {@code namespaceID:id}
    * either from ItemsAdder custom items or from vanilla Minecraft items.
    *
    * @param item The ItemStack to get the name for
-   * @return String representing namespace and ID of the item
+   * @return String representing namespaceID and ID of the item
    */
   @Override @NotNull
   public String getItemNamespaceID(@NotNull final ItemStack item) {
@@ -122,11 +122,11 @@ public class ItemsAdderBridge implements CustomItemsService {
   }
 
   /**
-   * Gets the namespace ID of the given Block in the format {@code namespace:id}
+   * Gets the namespaceID ID of the given Block in the format {@code namespaceID:id}
    * either from ItemsAdder custom blocks or from vanilla Minecraft blocks.
    *
    * @param block The block to get the name for
-   * @return String representing namespace and ID of the block
+   * @return String representing namespaceID and ID of the block
    */
   @Override @NotNull
   public String getBlockNamespaceID(@NotNull final Block block) {
@@ -160,9 +160,9 @@ public class ItemsAdderBridge implements CustomItemsService {
   }
 
   /**
-   * Gets the ItemStack associated with a custom block by its namespace ID.
+   * Gets the ItemStack associated with a custom block by its namespaceID ID.
    *
-   * @param blockNamespaceID The namespace ID of the custom block
+   * @param blockNamespaceID The namespaceID ID of the custom block
    * @return The ItemStack associated with the custom block, or null if not found
    */
   @Override @Nullable
