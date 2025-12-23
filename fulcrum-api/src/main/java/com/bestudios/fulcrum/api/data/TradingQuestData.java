@@ -7,10 +7,11 @@ import java.util.Map;
  * Holds the specific objectives and rewards determined by the RNG seed.
  *
  * @param provider      The Object instance this quest belongs to.
+ * @param seed          The random seed used to generate this specific quest configuration.
  * @param materials     A map of the required Materials {@link MaterialData} and their respective bundle amounts.
  * @param moneyReward   The monetary reward (price) awarded upon completion.
  * @param expReward     The experience points awarded upon completion.
- * @param seed          The random seed used to generate this specific quest configuration.
+
  *
  * @author Bestialus
  * @version 1.0
@@ -18,10 +19,10 @@ import java.util.Map;
  */
 public record TradingQuestData(
         Object provider,
+        long seed,
         Map<MaterialData, Integer> materials,
         double moneyReward,
-        int expReward,
-        long seed
+        int expReward
 ) {
 
   /**

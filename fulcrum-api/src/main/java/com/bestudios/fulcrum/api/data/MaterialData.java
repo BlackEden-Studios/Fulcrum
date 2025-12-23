@@ -1,8 +1,11 @@
 package com.bestudios.fulcrum.api.data;
 
 import org.bukkit.Material;
+import org.bukkit.configuration.ConfigurationSection;
+import org.jetbrains.annotations.NotNull;
 
-import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * Holds data for a specific valid material.
@@ -24,7 +27,35 @@ public record MaterialData(
         String displayName,
         Material type,
         int tier,
-        List<String> sources,
+        Set<String> sources,
         int bundleAmount,
         double bundleValue
-) { }
+) {
+
+  /**
+   * Helper to parse a specific Material section.
+   *
+   * @param tier The tier of the material
+   * @param displayName The display name of the material
+   * @param config The configuration section to parse
+   * @return A new MaterialData object parsed from the configuration
+   */
+  public static @NotNull MaterialData parseMaterialData(
+          int tier,
+          @NotNull String displayName,
+          @NotNull ConfigurationSection config
+  ) {
+    // Safe Material parsing
+    String typeStr = config.getString("type", "AIR");
+
+    return new MaterialData(
+      config.getString("namespace", ""),
+      displayName.isEmpty() ? typeStr : displayName,
+      Material.getMaterial(typeStr) != null ? Material.getMaterial(typeStr) : Material.AIR,
+      tier,
+      config.getStringList("sources").stream().collect(Collectors.toUnmodifiableSet()),
+      config.getInt("bundle.amount", 1),
+      config.getDouble("bundle.value", 0.0)
+    );
+  }
+}
