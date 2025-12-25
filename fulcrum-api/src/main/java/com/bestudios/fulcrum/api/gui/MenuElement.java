@@ -5,32 +5,39 @@ import io.papermc.paper.datacomponent.DataComponentTypes;
 import io.papermc.paper.datacomponent.item.ItemLore;
 import net.kyori.adventure.text.Component;
 import org.bukkit.Material;
+import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.Map;
+import java.util.function.Consumer;
 
 /**
- * A generic, thread-safe blueprint for any GUI element.
- * Supports both Valued components (e.g. Enchants) and Non-Valued flags (e.g. Unbreakable).
+ * A generic, thread-safe blueprint for any GUI element, used to populate {@link MenuData} instances.
+ * <br>
+ * This class is immutable and thread-safe.
  */
-public record MenuElementBlueprint(
+public record MenuElement (
         int slot,
         @NotNull Material material,
         @Nullable Component displayName,
         @Nullable ItemLore lore,
-        @NotNull Map<DataComponentType, Object> dataComponents
+        @NotNull Map<DataComponentType, Object> dataComponents,
+        @Nullable Consumer<Player> action // Added action field
 ) {
 
-  public MenuElementBlueprint {
-    dataComponents = Map.copyOf(dataComponents); // Ensure immutability
+  public MenuElement {
+    dataComponents = Map.copyOf(dataComponents);
   }
 
+  /**
+   * Converts this blueprint into an ItemStack.
+   * @return The resulting ItemStack.
+   */
   public @NotNull ItemStack toItemStack() {
     ItemStack item = new ItemStack(material);
 
-    // 1. Apply Standard Visuals
     if (displayName != null) {
       item.setData(DataComponentTypes.CUSTOM_NAME, displayName);
     }
@@ -38,7 +45,6 @@ public record MenuElementBlueprint(
       item.setData(DataComponentTypes.LORE, lore);
     }
 
-    // 2. Apply Generic Data Components
     for (Map.Entry<DataComponentType, Object> entry : dataComponents.entrySet()) {
       applyData(item, entry.getKey(), entry.getValue());
     }
@@ -46,29 +52,22 @@ public record MenuElementBlueprint(
     return item;
   }
 
-  /**
-   * Helper to distinguish between Valued and Non-Valued components.
-   */
+  ///////////////////////////////////////////////////////////////////////////
+
   private void applyData(ItemStack item, DataComponentType type, Object value) {
-    // Check if the component expects a value (e.g., Integer, Boolean, List)
     if (type instanceof DataComponentType.Valued<?> valuedType) {
       applyValued(item, valuedType, value);
     } else if (type instanceof DataComponentType.NonValued nonValuedType){
-      // It is a Non-Valued flag (e.g., Unbreakable), just setting it enables it
       item.setData(nonValuedType);
     }
   }
 
-  /**
-   * Captures the wildcard <T> so we can call setData safely.
-   */
   @SuppressWarnings("unchecked")
   private <T> void applyValued(ItemStack item, DataComponentType.Valued<T> type, Object value) {
     try {
-      // We cast 'value' to T. This assumes the blueprint creator put the correct value type in the map.
       item.setData(type, (T) value);
     } catch (ClassCastException e) {
-      System.err.println("[VJobs] Type mismatch for component " + type.getClass().getSimpleName() + ": " + e.getMessage());
+      // Log error
     }
   }
 }

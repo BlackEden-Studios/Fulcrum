@@ -1,19 +1,12 @@
 package com.bestudios.fulcrum.api.gui;
 
 import com.google.errorprone.annotations.CanIgnoreReturnValue;
-import net.kyori.adventure.text.Component;
 import org.bukkit.entity.Player;
-import org.bukkit.inventory.ItemStack;
-import org.jetbrains.annotations.Contract;
+import org.bukkit.inventory.Inventory;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Consumer;
 
 /**
@@ -24,231 +17,116 @@ import java.util.function.Consumer;
  * @since   1.0
  * @see SimpleMenu
  */
-public abstract class LinkedMenu extends SimpleMenu {
+public class LinkedMenu extends SimpleMenu {
 
-  /** The ID of the current page */
+  /** The current page ID */
   protected String currentPageId;
+  /** The worker that manages the pages */
+  protected final LinkedMenuWorker linkedWorker;
 
   /**
-   * Backing storage for items.
-   * We store ItemStack[] arrays, not Inventory objects, to allow fast switching
-   * of contents without closing the player's window.
+   * Constructor for LinkedMenu.
+   * @param rows   Rows to use.
+   * @param worker The worker to use.
    */
-  protected final Map<String, ItemStack[]> contentsMap;
-
-  /**
-   * Backing storage for actions.
-   * Stores Lists to be compatible with SimpleMenu's internal structure.
-   */
-  protected final Map<String, List<Consumer<Player>>> actionsMap;
-
-  // -- Constructors --
-
-  public LinkedMenu(@NotNull Rows rows, Component title, boolean usePlaceholders) {
-    super(rows, title, usePlaceholders);
-
-    // Initialize storage
-    this.contentsMap = new ConcurrentHashMap<>();
-    this.actionsMap = new ConcurrentHashMap<>();
-
-    // Initialize the starting page immediately so the menu is never in an invalid state
-    this.currentPageId = "starting";
-    createPage(currentPageId);
-
-    // Force the swap to bind 'this.actions' to the starting page
-    changePage(currentPageId);
+  public LinkedMenu(@NotNull Rows rows, @NotNull LinkedMenuWorker worker) {
+    super(rows, worker);
+    this.linkedWorker = worker;
+    this.currentPageId = "starting"; // Default entry point
   }
 
-  public LinkedMenu(@NotNull Rows rows, Component title) {
-    this(rows, title, false);
-  }
-
-  public LinkedMenu(@NotNull Rows rows) {
-    this(rows, null, false);
-  }
-
-  /**
-   * Switches the menu view to a specific page.
-   * <p>
-   * This method performs the Reference Swap:
-   * <ol>
-   *   <li>Updates the visual inventory contents.</li>
-   *   <li>Points the menu actions to the new page's action list.</li>
-   * </ol>
-   *
-   * @param pageID The ID of the page to switch to
-   * @return this instance
-   */
-  @Contract("_ -> this")
-  @CanIgnoreReturnValue
-  public final LinkedMenu changePage(@NotNull String pageID) {
-    // 1. Ensure page exists
-    createPage(pageID);
-
-    // 2. Update state tracker
-    this.currentPageId = pageID;
-
-    // 3. Action update
-    this.actions = actionsMap.get(pageID);
-
-    // 4. Visual update
-    ItemStack[] pageContents = contentsMap.get(pageID);
-    getInventory().setContents(pageContents);
-
-    // 5. Call the hook (subclasses can override this safely)
-    onPageChange(pageID);
-
-    return this;
-  }
-
-  /**
-   * Creates a new page if it doesn't exist.
-   * Initializes the backing arrays and lists.
-   *
-   * @param pageID The ID of the page to create
-   * @return this instance
-   */
-  @CanIgnoreReturnValue
-  private LinkedMenu createPage(@NotNull String pageID) {
-    if (contentsMap.containsKey(pageID) && actionsMap.containsKey(pageID)) return this;
-
-    int size = getInventory().getSize();
-
-    // 1. Initialize Items
-    ItemStack[] items = new ItemStack[size];
-    if (usesPlaceholders())
-      Arrays.fill(items, PLACEHOLDER_ITEM);
-    contentsMap.put(pageID, items);
-
-    // 2. Initialize Actions
-    List<Consumer<Player>> actionList = new ArrayList<>(size);
-    for (int i = 0; i < getInventory().getSize(); i++) actionList.add(null);
-    actionsMap.put(pageID, actionList);
-
-    return this;
-  }
-
-  // -- Item Setting Logic --
+  // --- Core Logic Swapping ---
 
   @Override
-  public void setItem(int slot, @Nullable ItemStack item, @Nullable Consumer<Player> action) {
-    // Update the item in the backing inventory
-    super.setItem(slot, item, action);
-    // Save the reference in the backing map
-    contentsMap.get(currentPageId)[slot] = getInventory().getItem(slot);
-  }
-
-  /**
-   * Changes an item on a specific page.
-   *
-   * @param slot   The slot to modify
-   * @param item   The item to set
-   * @param action The action to set
-   * @param pageId The ID of the page to modify
-   */
-  public void setItem(int slot, @Nullable ItemStack item, @Nullable Consumer<Player> action, @NotNull String pageId) {
-    if (slot < 0 || slot >= getInventory().getSize())
-      throw new IllegalArgumentException("Slot " + slot + " out of bounds");
-
-    // 2. If we modify the current page, we must update the live view immediately
-    if (pageId.equals(currentPageId)) {
-      setItem(slot, item, action);
-      return;
+  protected @NotNull MenuData getCurrentData() {
+    MenuData pageData = linkedWorker.getPageData(currentPageId);
+    if (pageData == null) {
+      // Fallback or explicit creation if the page is missing
+      throw new IllegalStateException("Page '" + currentPageId + "' does not exist in the worker!");
     }
-
-    createPage(pageId);
-    // Update Storage
-    contentsMap.get(pageId)[slot] = (item == null && usesPlaceholders()) ? PLACEHOLDER_ITEM : item;
-    actionsMap.get(pageId).set(slot, action);
-
-
+    return pageData;
   }
 
-  // -- Convenience Overloads --
+  // --- Page Navigation ---
 
   /**
-   * Changes an item on a specific page.
+   * Switches the view to a new page.
    *
-   * @param slot   The slot to modify
-   * @param item   The item to set
-   * @param pageId The ID of the page to modify
+   * @param pageId The ID of the page to open.
+   * @param viewer The player (needed to refresh the inventory).
    */
-  public void setItem(int slot, ItemStack item, String pageId) {
-    setItem(slot, item, null, pageId);
-  }
+  @CanIgnoreReturnValue
+  public LinkedMenu changePage(@NotNull String pageId, @NotNull Player viewer) {
+    this.currentPageId = pageId;
 
-  /**
-   * Changes an item on a specific page.
-   *
-   * @param update The update to apply
-   * @param pageId The ID of the page to modify
-   */
-  public void setItem(@NotNull MenuUpdate update, String pageId) {
-    setItem(update.slot(), update.item(), update.action(), pageId);
-  }
+    // Trigger the standard open() logic.
+    // Because we overrode getCurrentData(), open() will now:
+    // 1. Check if the NEW page isReady()
+    // 2. If yes -> Render new blueprints
+    // 3. If not -> Show loading screen loop until that specific page is ready
+    this.open(viewer);
 
-  /**
-   * Removes an item from a specific page.
-   *
-   * @param slot   The slot in which to remove the item
-   * @param pageId The ID of the page to modify
-   */
-  public void removeItem(int slot, String pageId) {
-    setItem(slot, null, null, pageId);
-  }
-
-  /**
-   * Bulk update for a specific page
-   *
-   * @param updates The updates to apply
-   * @param pageId  The ID of the page to modify
-   * @return this instance
-   */
-  public LinkedMenu update(MenuUpdate @NotNull [] updates, String pageId) {
-    for (MenuUpdate update : updates) setItem(update, pageId);
     return this;
   }
 
-  @Override
-  public abstract LinkedMenu compose();
-
-  public abstract void onPageChange(String pageId);
+  /**
+   * Gets all available page IDs.
+   * @return A set of all available page IDs.
+   */
+  public Set<String> getPageIds() {
+    return linkedWorker.getPages().keySet();
+  }
 
   /**
-   * Gets the ID of the current page.
-   * @return The current page ID
+   * Gets the current page ID.
+   * @return The current page ID.
    */
   public String getCurrentPageId() {
     return currentPageId;
   }
 
   /**
-  * Gets the IDs of all pages in this menu.
-  * @return The IDs of all pages
-  */
-  public Set<String> getPageIds() {
-    return contentsMap.keySet();
-  }
-
-  /**
-   * Gets the stored items for a specific page.
+   * A worker that manages multiple pages.
    *
-   * @param pageId The ID of the page to retrieve items for
-   * @return The items stored in the specified page
+   * @author Bestialus
+   * @version 1.0
+   * @since   1.0
+   * @see MenuWorker
    */
-  public ItemStack[] getItems(String pageId) {
-    return contentsMap.get(pageId);
-  }
+  public interface LinkedMenuWorker extends MenuWorker {
 
-  /**
-   * Gets the stored actions for a specific page.
-   *
-   * @param pageId The ID of the page to retrieve actions for
-   * @return The actions stored in the specified page
-   */
-  @SuppressWarnings("unchecked")
-  public Consumer<Player>[] getActions(String pageId) {
-    List<Consumer<Player>> list = actionsMap.get(pageId);
-    return list == null ? new Consumer[0] : list.toArray(new Consumer[0]);
+    /**
+     * Retrieves the registry of all pages.
+     * Key: Page ID
+     * Value: The self-contained MenuData for that page
+     */
+    @NotNull Map<String, MenuData> getPages();
+
+    /**
+     * Helper to get a specific page's data.
+     */
+    default MenuData getPageData(String pageId) {
+      return getPages().get(pageId);
+    }
+
+    /**
+     * Convenience generator for a page-switching action.
+     * <br>
+     * Replaces: <code>(p) -> ((LinkedMenu)p.getOpenInventory().getTopInventory().getHolder()).changePage(...)</code>
+     *
+     * @param pageId The ID of the page to switch to.
+     * @return A consumer action ready to be passed to a Blueprint.
+     */
+    default @NotNull Consumer<Player> changePage(@NotNull String pageId) {
+      return player -> {
+        Inventory top = player.getOpenInventory().getTopInventory();
+        if (top.getHolder() instanceof LinkedMenu menu) {
+          menu.changePage(pageId, player);
+        } else {
+          // Optional: Log warning if this action was triggered outside a LinkedMenu
+          player.closeInventory();
+        }
+      };
+    }
   }
 }

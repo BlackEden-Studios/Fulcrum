@@ -1,6 +1,9 @@
 package com.bestudios.fulcrum.api.data;
 
+import java.util.Collection;
+import java.util.Collections;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 /**
  * Immutable Record representing a generated Quest for a player.
@@ -25,6 +28,10 @@ public record TradingQuestData(
         int expReward
 ) {
 
+  public TradingQuestData {
+    materials = Map.copyOf(materials);
+  }
+
   /**
    * Returns true if the material map contains a material with the specified Namespace ID
    * @param namespaceID The namespace ID of the material
@@ -34,6 +41,14 @@ public record TradingQuestData(
     for (Map.Entry<MaterialData, Integer> entry : materials.entrySet())
       if (entry.getKey().namespaceID().equals(namespaceID)) return true;
     return false;
+  }
+
+  /**
+   * Returns a map of the materials required from the quest and their respective amounts.
+   * @return an unmodifiable map of the materials required from the quest and their respective amounts.
+   */
+  public Map<String, Integer> getNamespaceIDMap() {
+    return materials.entrySet().stream().collect(Collectors.toUnmodifiableMap(entry -> entry.getKey().namespaceID(), Map.Entry::getValue));
   }
 
 }

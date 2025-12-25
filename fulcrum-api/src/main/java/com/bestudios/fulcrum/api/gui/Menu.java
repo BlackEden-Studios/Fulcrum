@@ -3,6 +3,7 @@ package com.bestudios.fulcrum.api.gui;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.InventoryHolder;
 import org.bukkit.inventory.ItemStack;
+import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -12,8 +13,8 @@ import java.util.Objects;
 import java.util.function.Consumer;
 
 /**
- * Interface for creating interactive menu inventoriesMap.
- * <p>
+ * Interface for creating interactive menu inventories.
+ * <br>
  * The Menu interface extends InventoryHolder to provide a standardized way
  * to create and manage interactive GUIs with clickable items. It handles
  * item placement, clicks actionsMap, and menu updates.
@@ -71,15 +72,6 @@ public interface Menu extends InventoryHolder {
   }
 
   /**
-   * Populates the menu with items.
-   * <p>
-   * This method is called before the menu is shown to a player.
-   * Implementations should use this to set up all menu items.
-   * </p>
-   */
-  Menu compose();
-
-  /**
    * Updates multiple items in the menu.
    *
    * @param updates The list of MenuUpdates to apply
@@ -89,13 +81,6 @@ public interface Menu extends InventoryHolder {
     for (MenuUpdate update : updates) setItem(update);
     return this;
   }
-
-  /**
-   * Determines whether placeholder items should be used.
-   *
-   * @return true if the menu uses placeholders, false otherwise
-   */
-  boolean usesPlaceholders();
 
   /**
    * Checks if the specified slot is valid for this menu.
@@ -123,16 +108,10 @@ public interface Menu extends InventoryHolder {
 
   /**
    * Opens this menu for a player.
-   * <p>
-   * This default implementation handles the common steps for opening menus:
-   * setting placeholders if needed, populating items, and opening the inventory.
-   * </p>
    *
    * @param player The player to show the menu to
    */
-  default void open(Player player) {
-    if (getInventory().isEmpty()) compose();
-
+  default void open(@NotNull Player player) {
     player.openInventory(getInventory());
   }
 
@@ -141,7 +120,7 @@ public interface Menu extends InventoryHolder {
    *
    * @param player The player to close the menu for
    */
-  default void close(Player player) {
+  default void close(@NotNull Player player) {
     player.closeInventory();
   }
 
@@ -162,4 +141,64 @@ public interface Menu extends InventoryHolder {
           0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27,
           28, 29, 30, 31, 32, 33, 34, 35, 40
   ));
+
+  /**
+   * Enum representing possible menu sizes (Chest rows).
+   */
+  public enum Rows {
+    ONE(1),
+    TWO(2),
+    THREE(3),
+    FOUR(4),
+    FIVE(5),
+    SIX(6);
+
+    /** The number of slots in the inventory */
+    private final int size;
+
+    /**
+     * The number of rows in the inventory (1-6)
+     * @param rows The number of rows
+     */
+    @Contract(pure = true)
+    Rows(int rows) {
+      // Calculate the inventory size (MUST be a multiple of 9)
+      this.size = rows * 9;
+    }
+
+    /**
+     * @return The total slot count required for Bukkit.createInventory
+     */
+    @Contract(pure = true)
+    public int getSize() {
+      return size;
+    }
+
+    /**
+     * @return The number of rows (1-6)
+     */
+    @Contract(pure = true)
+    public int getRowCount() {
+      return size/9;
+    }
+
+    /**
+     * Utility to safely get an enum from a slot count (e.g. from inventory size).
+     * @param slots The number of slots in the inventory
+     * @throws IllegalArgumentException if slots are invalid
+     */
+    public static Rows fromSlotCount(int slots) {
+      return fromInt(slots/9);
+    }
+
+    /**
+     * Utility to safely get an enum from a raw integer (e.g. from config).
+     * @param rows The number of rows (1-6)
+     * @throws IllegalArgumentException if rows are invalid
+     */
+    public static Rows fromInt(int rows) {
+      if (rows >= 1 && rows <= 6) return Rows.values()[rows-1];
+      throw new IllegalArgumentException("Invalid row count: " + rows);
+    }
+  }
 }

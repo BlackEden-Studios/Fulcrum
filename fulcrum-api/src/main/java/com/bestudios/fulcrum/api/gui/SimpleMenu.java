@@ -1,24 +1,22 @@
 package com.bestudios.fulcrum.api.gui;
 
+import io.papermc.paper.datacomponent.item.ItemLore;
 import net.kyori.adventure.text.Component;
 import org.bukkit.Bukkit;
-import org.bukkit.Material;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
-import org.bukkit.inventory.meta.ItemMeta;
-import org.jetbrains.annotations.Contract;
+import org.bukkit.scheduler.BukkitRunnable;
 import org.jetbrains.annotations.NotNull;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Consumer;
 
 /**
  * Abstract implementation of the Menu interface providing common functionality for GUI menus.
- * <p>
+ * <br>
  * SimpleMenu provides a standard implementation for creating customizable and interactive menus.
+ * <br>
  * It manages the disposal of items and their associated actionsMap.
  *
  * @author Bestialus
@@ -26,204 +24,111 @@ import java.util.function.Consumer;
  * @since   1.0
  * @see Menu
  */
-public abstract class SimpleMenu implements Menu {
+public class SimpleMenu implements Menu {
 
-  /** Placeholder item used for empty slots */
-  protected static final ItemStack PLACEHOLDER_ITEM;
-
-  /* Initialize the placeholder item */
-  static {
-    PLACEHOLDER_ITEM = new ItemStack(Material.BLACK_STAINED_GLASS_PANE);
-    final ItemMeta meta = PLACEHOLDER_ITEM.getItemMeta();
-    meta.displayName(Component.space());
-    PLACEHOLDER_ITEM.setItemMeta(meta);
-  }
-
-  /** The inventory backing this menu */
-  protected Inventory inventory;
-  /** The actionsMap associated with each slot */
-  protected List<Consumer<Player>> actions;
-  /** Whether to use placeholder items for empty slots */
-  protected final boolean placeholders;
+  protected final Inventory inventory;
+  protected final Rows rows;
+  protected final MenuWorker worker;
 
   /**
-   * Constructor for SimpleMenu with a specified number of rows, the specified title and placeholders enabled
-   *
-   * @param rows            The number of rows in the menu
-   * @param title           The title of the menu
-   * @param usePlaceholders Whether to use placeholder items for empty slots
+   * Constructor for SimpleMenu. Initializes the inventory and supporting data injection through {@link MenuData}.
    */
-  public SimpleMenu(@NotNull Rows rows, Component title, boolean usePlaceholders) {
-    this.inventory = Bukkit.createInventory(this, rows.getSize(), title);
-    this.actions = new ArrayList<>(rows.getSize());
-    for (int i = 0; i < rows.getSize(); i++) this.actions.add(null);
-    this.placeholders = usePlaceholders;
+  public SimpleMenu(@NotNull Rows rows, @NotNull MenuWorker worker) {
+    this.rows = rows;
+    this.worker = worker;
+    // We use the title from the data
+    this.inventory = Bukkit.createInventory(this, rows.getSize(), getCurrentData().title());
+  }
 
-    // Fill the inventory with empty items
-    if (usePlaceholders) {
-      ItemStack[] items = new ItemStack[rows.getSize()];
-      Arrays.fill(items, PLACEHOLDER_ITEM);
-      this.inventory.setContents(items);
+  /**
+   * The logic behind the menu opening.
+   * Checks the Ready Flag -> Renders OR Schedules Retry.
+   *
+   * @param player The player to open the menu for
+   */
+  @Override
+  public void open(@NotNull Player player) {
+    if (getCurrentData().isReady()) {
+      // 1. Data is ready: Render it immediately
+      renderAndShow(player);
+    } else {
+      // 2. Data is NOT ready: Schedule a check
+      player.sendMessage(Component.text("§7Loading menu...")); // Optional UX feedback
+
+      new BukkitRunnable() {
+        @Override
+        public void run() {
+          if (player.isOnline()) {
+            // Recursive call: will check isReady() again
+            open(player);
+          }
+        }
+      }.runTaskLater(worker.getPlugin(), 10L); // 10 Ticks = Half a second
     }
   }
 
   /**
-   * Constructor for SimpleMenu with a specified number of rows and the specified title
-   *
-   * @param rows  The number of rows in the menu
-   * @param title The title of the menu
+   * Internal method to translate Blueprints -> Inventory
    */
-  public SimpleMenu(@NotNull Rows rows, Component title) {
-    this(rows, title, false);
+  private void renderAndShow(Player player) {
+    // Clear previous state (optional, but good for safety)
+    this.inventory.clear();
+
+    // Apply Blueprints
+    for (MenuElement bp : this.getCurrentData().blueprints().values()) {
+      if (!isValidSlot(bp.slot())) continue;
+
+      // 1. Set Visual Item
+      this.inventory.setItem(bp.slot(), bp.toItemStack());
+    }
+
+    player.openInventory(this.inventory);
   }
 
   /**
-   * Constructor for SimpleMenu with a specified number of rows
-   *
-   * @param rows The number of rows in the menu
+   * Returns the data currently being viewed.
+   * <br>
+   * In SimpleMenu, this is always the single worker data.
    */
-  public SimpleMenu(@NotNull Rows rows) {
-    this(rows, Component.empty(), false);
+  protected @NotNull MenuData getCurrentData() {
+    return this.worker.getData();
   }
 
-  /**
-   * Handles click events within the menu inventory.
-   * <p>
-   * Executes the action associated with the clicked slot, if one exists.
-   *
-   * @param slot The slot that was clicked
-   * @param player The player who clicked
-   */
   @Override
   public void click(int slot, Player player) {
     if (!isValidSlot(slot)) return;
-    final Consumer<Player> action = actions.get(slot);
+    Consumer<Player> action = this.getCurrentData().blueprints().get(slot).action();
     if (action != null) action.accept(player);
   }
 
-  /**
-   * Sets an item at the specified slot with an associated click action.
-   *
-   * @param slot The inventory slot to place the item in
-   * @param item The ItemStack to place in the slot
-   * @param action The action to execute when the item is clicked
-   */
+  // --- Boilerplate Implementations ---
+
   @Override
   public void setItem(int slot, ItemStack item, Consumer<Player> action) {
-    if (isValidSlot(slot))
-      throw new IllegalArgumentException("Inventory Slot " + slot + " is out of bounds this menu's size");
-
-    getInventory().setItem(slot, item == null && usesPlaceholders() ? PLACEHOLDER_ITEM : item);
-    actions.set(slot, action);
+    this.inventory.setItem(slot, item);
+    this.getCurrentData().blueprints().put(
+      slot,
+      new MenuElement(slot,
+                               item.getType(),
+                               item.getItemMeta().hasCustomName() ? item.getItemMeta().customName() : Component.empty(),
+                               item.getItemMeta().hasLore() ? ItemLore.lore(item.getItemMeta().lore()) : ItemLore.lore().build(),
+                               new ConcurrentHashMap<>(),
+                               action
+      )
+    );
   }
 
-  /**
-   * Abstract method to be implemented by subclasses to set up menu items.
-   * <p>
-   * This method is called before the menu is shown to a player.
-   */
   @Override
-  public abstract SimpleMenu compose();
+  public @NotNull Inventory getInventory() { return inventory; }
 
-  /**
-   * Checks whether placeholders are enabled for empty slots.
-   *
-   * @return True if placeholders are enabled, false otherwise
-   */
   @Override
-  public boolean usesPlaceholders() {
-    return placeholders;
+  public @NotNull ItemStack[] getItems() {
+    return getCurrentData().blueprints().values().stream().map(MenuElement::toItemStack).toArray(ItemStack[]::new);
   }
 
-  /**
-   * Gets the items in this menu.
-   *
-   * @return The array of items
-   */
   @Override
-  public ItemStack[] getItems() {
-    return inventory.getStorageContents();
-  }
-
-  /**
-   * Gets the actionsMap in this menu indexed by slot.
-   *
-   * @return Array of slots to click actionsMap
-   */
-  @SuppressWarnings("unchecked")
-  @Override
-  public Consumer<Player>[] getActions() {
-    return actions.toArray(new Consumer[0]);
-  }
-
-  /**
-   * Gets the inventory associated with this menu.
-   *
-   * @return The Bukkit inventory
-   */
-  @Override
-  public @NotNull Inventory getInventory() {
-    return inventory;
-  }
-
-  /**
-   * Enum representing possible menu sizes (Chest rows).
-   */
-  public enum Rows {
-    ONE(1),
-    TWO(2),
-    THREE(3),
-    FOUR(4),
-    FIVE(5),
-    SIX(6);
-
-    /** The number of slots in the inventory */
-    private final int size;
-
-    /**
-     * The number of rows in the inventory (1-6)
-     * @param rows The number of rows
-     */
-    @Contract(pure = true)
-    Rows(int rows) {
-      // Calculate the inventory size (MUST be a multiple of 9)
-      this.size = rows * 9;
-    }
-
-    /**
-     * @return The total slot count required for Bukkit.createInventory
-     */
-    @Contract(pure = true)
-    public int getSize() {
-      return size;
-    }
-
-    /**
-     * @return The number of rows (1-6)
-     */
-    @Contract(pure = true)
-    public int getRowCount() {
-      return size/9;
-    }
-
-    /**
-     * Utility to safely get an enum from a slot count (e.g. from inventory size).
-     * @param slots The number of slots in the inventory
-     * @throws IllegalArgumentException if slots are invalid
-     */
-    public static Rows fromSlotCount(int slots) {
-      return fromInt(slots/9);
-    }
-
-    /**
-     * Utility to safely get an enum from a raw integer (e.g. from config).
-     * @param rows The number of rows (1-6)
-     * @throws IllegalArgumentException if rows are invalid
-     */
-    public static Rows fromInt(int rows) {
-      if (rows >= 1 && rows <= 6) return Rows.values()[rows-1];
-      throw new IllegalArgumentException("Invalid row count: " + rows);
-    }
+  public @NotNull Consumer<Player>[] getActions() {
+    return getCurrentData().blueprints().values().stream().map(MenuElement::action).toArray(Consumer[]::new);
   }
 
 }
