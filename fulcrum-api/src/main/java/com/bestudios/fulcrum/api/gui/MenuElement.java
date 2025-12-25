@@ -17,6 +17,12 @@ import java.util.function.Consumer;
  * A generic, thread-safe blueprint for any GUI element, used to populate {@link MenuData} instances.
  * <br>
  * This class is immutable and thread-safe.
+ *
+ * @author Bestialus
+ * @version 1.0
+ * @since   1.0
+ * @see Menu
+ * @see MenuData
  */
 public record MenuElement (
         int slot,

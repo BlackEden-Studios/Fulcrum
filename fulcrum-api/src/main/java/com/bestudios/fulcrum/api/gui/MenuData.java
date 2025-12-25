@@ -17,7 +17,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 public record MenuData(
         Object provider,
         Component title,
-        Map<Integer, MenuElement> blueprints,
+        Map<Integer, MenuElement> elements,
         AtomicBoolean ready // Thread-safe mutable flag
 ) {
 
@@ -29,12 +29,20 @@ public record MenuData(
     return new MenuData(provider, title, new ConcurrentHashMap<>(), new AtomicBoolean(false));
   }
 
-  public void addBlueprint(MenuElement blueprint) {
-    this.blueprints.put(blueprint.slot(), blueprint);
+  /**
+   * Adds an element to the data.
+   * @param element The element to add
+   */
+  public void addElement(MenuElement element) {
+    this.elements.put(element.slot(), element);
   }
 
-  public void removeBlueprint(int slot) {
-    this.blueprints.remove(slot);
+  /**
+   * Removes an element from the data.
+   * @param slot The slot of the element to remove
+   */
+  public void removeElement(int slot) {
+    this.elements.remove(slot);
   }
 
   /**
