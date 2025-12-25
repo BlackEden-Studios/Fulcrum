@@ -62,7 +62,7 @@ public class LinkedMenu extends SimpleMenu {
     // Trigger the standard open() logic.
     // Because we overrode getCurrentData(), open() will now:
     // 1. Check if the NEW page isReady()
-    // 2. If yes -> Render new blueprints
+    // 2. If yes -> Render new elements
     // 3. If not -> Show loading screen loop until that specific page is ready
     this.open(viewer);
 

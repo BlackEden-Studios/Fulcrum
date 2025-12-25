@@ -58,7 +58,7 @@ public abstract class AsyncMenuWorker implements MenuWorker {
   }
 
   /**
-   * The logic to generate blueprints and add them to the data.
+   * The logic to generate elements and add them to the data.
    * <br>
    * <b>WARNING:</b> This runs on an ASYNC thread. Do not call Bukkit API methods
    * (like creating inventories or spawning entities) here.

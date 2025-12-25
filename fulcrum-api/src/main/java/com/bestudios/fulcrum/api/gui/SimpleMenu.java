@@ -75,7 +75,7 @@ public class SimpleMenu implements Menu {
     this.inventory.clear();
 
     // Apply Blueprints
-    for (MenuElement bp : this.getCurrentData().blueprints().values()) {
+    for (MenuElement bp : this.getCurrentData().elements().values()) {
       if (!isValidSlot(bp.slot())) continue;
 
       // 1. Set Visual Item
@@ -97,7 +97,7 @@ public class SimpleMenu implements Menu {
   @Override
   public void click(int slot, Player player) {
     if (!isValidSlot(slot)) return;
-    Consumer<Player> action = this.getCurrentData().blueprints().get(slot).action();
+    Consumer<Player> action = this.getCurrentData().elements().get(slot).action();
     if (action != null) action.accept(player);
   }
 
@@ -106,7 +106,7 @@ public class SimpleMenu implements Menu {
   @Override
   public void setItem(int slot, ItemStack item, Consumer<Player> action) {
     this.inventory.setItem(slot, item);
-    this.getCurrentData().blueprints().put(
+    this.getCurrentData().elements().put(
       slot,
       new MenuElement(slot,
                                item.getType(),
@@ -123,12 +123,12 @@ public class SimpleMenu implements Menu {
 
   @Override
   public @NotNull ItemStack[] getItems() {
-    return getCurrentData().blueprints().values().stream().map(MenuElement::toItemStack).toArray(ItemStack[]::new);
+    return getCurrentData().elements().values().stream().map(MenuElement::toItemStack).toArray(ItemStack[]::new);
   }
 
   @Override
   public @NotNull Consumer<Player>[] getActions() {
-    return getCurrentData().blueprints().values().stream().map(MenuElement::action).toArray(Consumer[]::new);
+    return getCurrentData().elements().values().stream().map(MenuElement::action).toArray(Consumer[]::new);
   }
 
 }

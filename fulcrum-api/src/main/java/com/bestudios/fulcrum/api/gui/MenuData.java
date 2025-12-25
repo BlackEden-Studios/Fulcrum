@@ -1,6 +1,7 @@
 package com.bestudios.fulcrum.api.gui;
 
 import net.kyori.adventure.text.Component;
+import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.Map;
@@ -25,6 +26,7 @@ public record MenuData(
    * Static Factory.
    * Initializes with ready = false.
    */
+  @Contract("_, _ -> new")
   public static @NotNull MenuData create(Object provider, Component title) {
     return new MenuData(provider, title, new ConcurrentHashMap<>(), new AtomicBoolean(false));
   }
