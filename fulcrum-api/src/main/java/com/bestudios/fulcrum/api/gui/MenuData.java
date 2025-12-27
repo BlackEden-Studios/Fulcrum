@@ -1,11 +1,12 @@
 package com.bestudios.fulcrum.api.gui;
 
 import net.kyori.adventure.text.Component;
-import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
@@ -19,45 +20,66 @@ public record MenuData(
         Object provider,
         Component title,
         Map<Integer, MenuElement> elements,
-        AtomicBoolean ready // Thread-safe mutable flag
+        AtomicBoolean ready,
+        List<Runnable> observers
 ) {
 
-  /**
-   * Static Factory.
-   * Initializes with ready = false.
-   */
-  @Contract("_, _ -> new")
   public static @NotNull MenuData create(Object provider, Component title) {
-    return new MenuData(provider, title, new ConcurrentHashMap<>(), new AtomicBoolean(false));
+    return new MenuData(
+            provider,
+            title,
+            new ConcurrentHashMap<>(),
+            new AtomicBoolean(false),
+            new CopyOnWriteArrayList<>()
+    );
   }
 
-  /**
-   * Adds an element to the data.
-   * @param element The element to add
-   */
-  public void addElement(MenuElement element) {
-    this.elements.put(element.slot(), element);
-  }
+  // --- State Management ---
 
-  /**
-   * Removes an element from the data.
-   * @param slot The slot of the element to remove
-   */
-  public void removeElement(int slot) {
-    this.elements.remove(slot);
-  }
-
-  /**
-   * Marks the data as fully populated and ready for rendering.
-   */
   public void markAsReady() {
     this.ready.set(true);
+    notifySubscribers();
   }
 
   /**
-   * Check if the data is ready to be viewed.
+   * New: Marks the data as busy (updating).
+   * Notifies the menu to potentially show a loading screen.
    */
+  public void markAsBusy() {
+    this.ready.set(false);
+  }
+
   public boolean isReady() {
     return this.ready.get();
+  }
+
+  // --- Subscription ---
+
+  public void subscribe(Runnable callback) {
+    this.observers.add(callback);
+  }
+
+  public void unsubscribe(Runnable callback) {
+    this.observers.remove(callback);
+  }
+
+  private void notifySubscribers() {
+    for (Runnable callback : observers) {
+      try {
+        callback.run();
+      } catch (Exception e) {
+        e.printStackTrace();
+      }
+    }
+  }
+
+  // --- Blueprint Management ---
+
+  public void addElement(int slot, MenuElement element) {
+    this.elements.put(slot, element);
+  }
+
+  public void removeElement(int slot) {
+    this.elements.remove(slot);
   }
 }

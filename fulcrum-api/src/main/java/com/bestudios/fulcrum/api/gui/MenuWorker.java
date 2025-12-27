@@ -4,7 +4,7 @@ import org.bukkit.plugin.java.JavaPlugin;
 import org.jetbrains.annotations.NotNull;
 
 /**
- * A worker responsible for populating a {@link MenuData} object asynchronously.
+ * A worker responsible for populating a {@link MenuData} object.
  * <br>
  * The worker holds a reference to the plugin that scheduled it (for creating tasks)
  * and the data container it is responsible for filling.
@@ -31,11 +31,20 @@ public interface MenuWorker {
   @NotNull MenuData getData();
 
   /**
-   * Starts the asynchronous population process.
-   * <p>
+   * Starts the population process.
+   * <br>
    * When the process is complete, this worker MUST ensure that
    * {@link MenuData#markAsReady()} is called.
    */
   void start();
+
+  /**
+   * Performs a data update.
+   * <br>
+   * This method should force the MenuData to be "Not Ready" (Busy) while the action is running,
+   * preventing invalid renders. Once finished, it should mark the data as "Ready" again.
+   * @param action The logic to perform the update.
+   */
+  void update(Runnable action);
 
 }

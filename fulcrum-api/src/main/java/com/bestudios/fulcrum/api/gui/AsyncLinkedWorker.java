@@ -5,10 +5,11 @@ import org.bukkit.plugin.java.JavaPlugin;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * Abstract implementation of LinkedMenuWorker that handles the async lifecycle.
+ * Abstract implementation of MultipageMenuWorker that handles the async lifecycle.
  *
  * @author Bestialus
  * @version 1.0
@@ -16,7 +17,7 @@ import java.util.concurrent.ConcurrentHashMap;
  * @see LinkedMenu
  * @see AsyncMenuWorker
  */
-public abstract class AsyncLinkedWorker extends AsyncMenuWorker implements LinkedMenu.LinkedMenuWorker {
+public abstract class AsyncLinkedWorker extends AsyncMenuWorker implements MultipageMenuWorker {
 
   // The Registry: Map<PageID, MenuData>
   private final Map<String, MenuData> pages = new ConcurrentHashMap<>();
@@ -30,6 +31,28 @@ public abstract class AsyncLinkedWorker extends AsyncMenuWorker implements Linke
   @Override
   public @NotNull Map<String, MenuData> getPages() {
     return pages;
+  }
+
+  /**
+   * Updates a specific page's data safely.
+   * @param pageId The ID of the page to update.
+   * @param action The update logic.
+   */
+  public void updatePage(String pageId, Runnable action) {
+    MenuData pageData = getPages().get(pageId);
+    if (pageData == null) return;
+
+    // Lock the specific page
+    pageData.markAsBusy();
+
+    CompletableFuture
+    .runAsync(action)
+        .exceptionally(ex -> {
+          plugin.getLogger().severe("Error updating page " + pageId + ": " + ex.getMessage());
+          ex.printStackTrace();
+          return null;
+        })
+    .thenRun(pageData::markAsReady);
   }
 
   /**

@@ -53,33 +53,12 @@ public interface Menu extends InventoryHolder {
   }
 
   /**
-   * Sets an item at the specified slot with an associated click action.
-   *
-   * @param update The MenuUpdate to apply
-   */
-  default void setItem(@NotNull MenuUpdate update) {
-    Objects.requireNonNull(update, "MenuUpdate cannot be null");
-    setItem(update.slot(), update.item(), update.action());
-  }
-
-  /**
    * Removes an item from the specified slot. It's a convenient alternative to setting the item to null.
    *
    * @param slot The inventory slot to remove the item from
    */
   default void removeItem(int slot) {
     setItem(slot, null, null);
-  }
-
-  /**
-   * Updates multiple items in the menu.
-   *
-   * @param updates The list of MenuUpdates to apply
-   * @return The updated menu
-  */
-  default Menu update(MenuUpdate @NotNull [] updates) {
-    for (MenuUpdate update : updates) setItem(update);
-    return this;
   }
 
   /**
@@ -123,14 +102,6 @@ public interface Menu extends InventoryHolder {
   default void close(@NotNull Player player) {
     player.closeInventory();
   }
-
-  /**
-   * Represents a single update to a menu item.
-   * @param slot    Slot to update
-   * @param item    Item to set
-   * @param action  Action to set
-   */
-  record MenuUpdate(int slot, @Nullable ItemStack item, @Nullable Consumer<Player> action) {}
 
   /**
    * A list of all slots in the player's inventory.

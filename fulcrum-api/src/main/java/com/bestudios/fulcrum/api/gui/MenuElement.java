@@ -26,7 +26,6 @@ import java.util.function.Consumer;
  * @see MenuData
  */
 public record MenuElement (
-        int slot,
         @NotNull Material material,
         @Nullable Component displayName,
         @Nullable ItemLore lore,
@@ -61,14 +60,12 @@ public record MenuElement (
 
   /**
    * Static factory method to create a new MenuElement.
-   * @param slot   Slot to place the item in.
    * @param item   Item to place.
    * @param action Action to perform when the item is clicked.
    * @return A new MenuElement.
    */
-  public static @NotNull MenuElement of(int slot, ItemStack item, Consumer<Player> action) {
+  public static @NotNull MenuElement of(ItemStack item, Consumer<Player> action) {
     return new MenuElement(
-          slot,
           item.getType(),
           item.getItemMeta().hasCustomName() ? item.getItemMeta().customName() : Component.text(item.getType().name()),
           item.getItemMeta().hasLore() ? ItemLore.lore(item.getItemMeta().lore()) : ItemLore.lore().build(),

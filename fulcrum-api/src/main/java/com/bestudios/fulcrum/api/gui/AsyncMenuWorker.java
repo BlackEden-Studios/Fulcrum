@@ -1,5 +1,6 @@
 package com.bestudios.fulcrum.api.gui;
 
+import org.bukkit.Bukkit;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.jetbrains.annotations.NotNull;
 
@@ -46,15 +47,29 @@ public abstract class AsyncMenuWorker implements MenuWorker {
    */
   @Override
   public void start() {
-    // Run the populate logic in the common ForkJoinPool (Standard Async)
-    // FINISH: Mark data as ready so waiting Menus can open
-    CompletableFuture.runAsync(this::populate)
-            .exceptionally(ex -> {
-              plugin.getLogger().severe("Error populating menu data: " + ex.getMessage());
-              ex.printStackTrace();
-              return null;
-            })
-            .thenRun(data::markAsReady);
+    update(this::populate); // Reuse update logic for initial start
+  }
+
+  /**
+   * Updates the data asynchronously.
+   * <br>
+   * Enforces the Ready/Busy lifecycle.
+   */
+  @Override
+  public void update(Runnable action) {
+    // 1. Mark as Busy (Sync) - UI updates to "Loading..."
+    data.markAsBusy();
+
+    // 2. Run Logic (Async)
+    CompletableFuture
+    .runAsync(action)
+        .exceptionally(ex -> {
+          plugin.getLogger().severe("Error updating menu data: " + ex.getMessage());
+          ex.printStackTrace();
+          return null;
+        })
+    // 3. Mark as Ready (Sync/Async safe) - UI updates to Content
+    .thenRunAsync(data::markAsReady, Bukkit.getScheduler().getMainThreadExecutor(plugin));
   }
 
   /**
