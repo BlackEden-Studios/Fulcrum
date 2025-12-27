@@ -11,6 +11,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Consumer;
 
 /**
@@ -56,6 +57,24 @@ public record MenuElement (
     }
 
     return item;
+  }
+
+  /**
+   * Static factory method to create a new MenuElement.
+   * @param slot   Slot to place the item in.
+   * @param item   Item to place.
+   * @param action Action to perform when the item is clicked.
+   * @return A new MenuElement.
+   */
+  public static @NotNull MenuElement of(int slot, ItemStack item, Consumer<Player> action) {
+    return new MenuElement(
+          slot,
+          item.getType(),
+          item.getItemMeta().hasCustomName() ? item.getItemMeta().customName() : Component.text(item.getType().name()),
+          item.getItemMeta().hasLore() ? ItemLore.lore(item.getItemMeta().lore()) : ItemLore.lore().build(),
+          new ConcurrentHashMap<>(),
+          action
+    );
   }
 
   ///////////////////////////////////////////////////////////////////////////

@@ -4,7 +4,7 @@ plugins {
 
 allprojects {
     group = "io.github.blackeden-studios"
-    version = "0.6.2-BETA"
+    version = "0.6.3-BETA"
 
     repositories {
         mavenCentral()

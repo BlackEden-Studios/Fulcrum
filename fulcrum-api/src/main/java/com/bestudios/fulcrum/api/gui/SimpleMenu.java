@@ -27,14 +27,12 @@ import java.util.function.Consumer;
 public class SimpleMenu implements Menu {
 
   protected final Inventory inventory;
-  protected final Rows rows;
   protected final MenuWorker worker;
 
   /**
    * Constructor for SimpleMenu. Initializes the inventory and supporting data injection through {@link MenuData}.
    */
   public SimpleMenu(@NotNull Rows rows, @NotNull MenuWorker worker) {
-    this.rows = rows;
     this.worker = worker;
     // We use the title from the data
     this.inventory = Bukkit.createInventory(this, rows.getSize(), getCurrentData().title());
@@ -65,6 +63,17 @@ public class SimpleMenu implements Menu {
         }
       }.runTaskLater(worker.getPlugin(), 10L); // 10 Ticks = Half a second
     }
+  }
+
+  /**
+   * Refreshes the specified slot in the inventory.
+   * @param slot The slot to refresh
+   */
+  public void refresh(int slot) {
+    if (!isValidSlot(slot)) return;
+    // Get the element blueprint and apply it to the inventory
+    MenuElement element = getCurrentData().elements().get(slot);
+    this.inventory.setItem(slot, element != null ? element.toItemStack() : null);
   }
 
   /**
@@ -106,16 +115,7 @@ public class SimpleMenu implements Menu {
   @Override
   public void setItem(int slot, ItemStack item, Consumer<Player> action) {
     this.inventory.setItem(slot, item);
-    this.getCurrentData().elements().put(
-      slot,
-      new MenuElement(slot,
-                               item.getType(),
-                               item.getItemMeta().hasCustomName() ? item.getItemMeta().customName() : Component.empty(),
-                               item.getItemMeta().hasLore() ? ItemLore.lore(item.getItemMeta().lore()) : ItemLore.lore().build(),
-                               new ConcurrentHashMap<>(),
-                               action
-      )
-    );
+    this.getCurrentData().elements().put(slot, MenuElement.of(slot, item, action));
   }
 
   @Override
@@ -126,7 +126,7 @@ public class SimpleMenu implements Menu {
     return getCurrentData().elements().values().stream().map(MenuElement::toItemStack).toArray(ItemStack[]::new);
   }
 
-  @Override
+  @Override @SuppressWarnings("unchecked")
   public @NotNull Consumer<Player>[] getActions() {
     return getCurrentData().elements().values().stream().map(MenuElement::action).toArray(Consumer[]::new);
   }

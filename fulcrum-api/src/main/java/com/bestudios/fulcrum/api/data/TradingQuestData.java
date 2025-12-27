@@ -1,7 +1,5 @@
 package com.bestudios.fulcrum.api.data;
 
-import java.util.Collection;
-import java.util.Collections;
 import java.util.Map;
 import java.util.stream.Collectors;
 
@@ -44,11 +42,15 @@ public record TradingQuestData(
   }
 
   /**
-   * Returns a map of the materials required from the quest and their respective amounts.
+   * Returns a map of the materials required from the quest and their respective amounts,
+   * calculated by multiplying the bundle amount by the bundle count.
    * @return an unmodifiable map of the materials required from the quest and their respective amounts.
    */
   public Map<String, Integer> getNamespaceIDMap() {
-    return materials.entrySet().stream().collect(Collectors.toUnmodifiableMap(entry -> entry.getKey().namespaceID(), Map.Entry::getValue));
+    return materials.entrySet().stream().collect(
+      Collectors.toUnmodifiableMap(
+        entry -> entry.getKey().namespaceID(),
+        entry -> entry.getKey().bundleAmount() * entry.getValue()));
   }
 
 }
