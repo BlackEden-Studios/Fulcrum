@@ -5,10 +5,8 @@ import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
-import org.bukkit.scheduler.BukkitRunnable;
 import org.jetbrains.annotations.NotNull;
 
-import java.util.Map;
 import java.util.function.Consumer;
 
 /**
@@ -50,55 +48,41 @@ public class SimpleMenu implements Menu {
     // 1. Subscribe to updates (Reactive)
     // We define a callback that re-runs open() whenever data changes.
     Runnable onUpdate = () -> {
-      // Lazy cleanup: If player closed this specific inventory, stop listening
+      // Lazy cleanup: If the player closed this specific inventory, stop listening
       if (!player.isOnline() || player.getOpenInventory().getTopInventory() != this.inventory) {
-        currentData.unsubscribe(() -> {}); // You'd need to store this reference
+        currentData.unsubscribe(this);
         return;
       }
       // Re-run the open logic (which handles Ready vs. Busy)
       // We run on the next tick to ensure thread safety with Bukkit API
-      Bukkit.getScheduler().runTask(worker.getPlugin(), () -> open(player));
+      Bukkit.getScheduler().getMainThreadExecutor(worker.getPlugin()).execute(() -> open(player));
     };
 
-    // Note: To properly implement unsubscribe, SimpleMenu should hold the 'Runnable' reference.
-    // For this snippet, I assume you will manage the listener reference field.
-    currentData.subscribe(onUpdate);
+    currentData.subscribe(this, onUpdate);
 
     // 2. Render Logic
     if (currentData.isReady()) {
-      renderAndShow(player);
+      render();
+      // Show the inventory
+      player.openInventory(this.inventory);
     } else {
       player.sendMessage(Component.text("§eOpening the menu..."));
     }
   }
 
   /**
-   * Refreshes the specified slot in the inventory.
-   * @param slot The slot to refresh
-   */
-  public void refresh(int slot) {
-    if (!isValidSlot(slot)) return;
-    // Get the element blueprint and apply it to the inventory
-    MenuElement element = getCurrentData().elements().get(slot);
-    this.inventory.setItem(slot, element != null ? element.toItemStack() : null);
-  }
-
-  /**
    * Internal method to translate Elements -> Inventory Items
    */
-  private void renderAndShow(Player player) {
-    // Clear previous state (optional, but good for safety)
-    this.inventory.clear();
+  private void render() {
+    // Apply Elements
+    for (Integer slot : this.getCurrentData().updates()) {
+      if (!isValidSlot(slot)) continue;
 
-    // Apply Blueprints
-    for (Map.Entry<Integer, MenuElement> element : this.getCurrentData().elements().entrySet()) {
-      if (!isValidSlot(element.getKey())) continue;
-
-      this.inventory.setItem(element.getKey(), element.getValue().toItemStack());
+      this.inventory.setItem(slot, this.getCurrentData().elements().get(slot).toItemStack());
     }
 
-    // Show the inventory
-    player.openInventory(this.inventory);
+    // Clear updates
+    this.getCurrentData().clearUpdates();
   }
 
   /**
@@ -114,6 +98,7 @@ public class SimpleMenu implements Menu {
   public void click(int slot, Player player) {
     if (!isValidSlot(slot)) return;
     if (!getCurrentData().isReady()) return;
+
     Consumer<Player> action = this.getCurrentData().elements().get(slot).action();
     if (action != null) action.accept(player);
   }
