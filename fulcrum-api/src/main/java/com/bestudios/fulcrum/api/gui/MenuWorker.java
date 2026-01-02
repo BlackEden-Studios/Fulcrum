@@ -36,7 +36,7 @@ public interface MenuWorker {
    * When the process is complete, this worker MUST ensure that
    * {@link MenuData#markAsReady()} is called.
    */
-  void start();
+  MenuWorker start();
 
   /**
    * Performs a data update.
@@ -45,6 +45,6 @@ public interface MenuWorker {
    * preventing invalid renders. Once finished, it should mark the data as "Ready" again.
    * @param action The logic to perform the update.
    */
-  void update(Runnable action);
+  MenuWorker update(Runnable action);
 
 }

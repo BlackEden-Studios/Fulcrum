@@ -46,8 +46,9 @@ public abstract class AsyncMenuWorker implements MenuWorker {
    * the data as ready when finished.
    */
   @Override
-  public void start() {
+  public AsyncMenuWorker start() {
     update(this::populate); // Reuse update logic for initial start
+    return this;
   }
 
   /**
@@ -56,7 +57,7 @@ public abstract class AsyncMenuWorker implements MenuWorker {
    * Enforces the Ready/Busy lifecycle.
    */
   @Override
-  public void update(Runnable action) {
+  public AsyncMenuWorker update(Runnable action) {
     // 1. Mark as Busy (Sync) - UI updates to "Loading..."
     data.markAsBusy();
 
@@ -70,6 +71,7 @@ public abstract class AsyncMenuWorker implements MenuWorker {
         })
     // 3. Mark as Ready (Sync/Async safe) - UI updates to Content
     .thenRunAsync(data::markAsReady, Bukkit.getScheduler().getMainThreadExecutor(plugin));
+    return this;
   }
 
   /**
