@@ -37,12 +37,12 @@ import java.util.logging.Level;
  *   <li>Simple API for child plugins to register custom commands</li>
  * </ul>
  * <p>
- * Child plugins should override {@link #registerAdditionalCommands()} and {@link #additionalInitializationTasks()}
+ * Child plugins should override {@link #registerPluginCommands()} and {@link #initializationTasks()}
  * to perform custom initialization tasks such as registering event listeners, scheduling tasks, or setting up
  * additional configurations. Always call {@code super.onEnable()} to ensure proper initialization
  * of the base functionality.
  * <p>
- * The same goes for {@link #additionalTerminationTasks()} in {@link #onDisable()} to handle any cleanup tasks.
+ * The same goes for {@link #terminationTasks()} in {@link #onDisable()} to handle any cleanup tasks.
  * <p>
  * The default configuration structure expects:
  * <ul>
@@ -96,10 +96,10 @@ public abstract class FulcrumPlugin extends JavaPlugin{
     registerDebugCommand();
 
     // Additional initialization tasks can be performed by child classes here
-    additionalInitializationTasks();
+    initializationTasks();
 
     // Register other commands if needed
-    registerAdditionalCommands();
+    registerPluginCommands();
 
     getLogger().info("Plugin initialized successfully.");
   }
@@ -107,7 +107,7 @@ public abstract class FulcrumPlugin extends JavaPlugin{
   @Override
   public void onDisable() {
     // Perform any additional termination tasks needed by child classes
-    additionalTerminationTasks();
+    terminationTasks();
 
     getLogger().info("Plugin disabled.");
   }
@@ -116,13 +116,13 @@ public abstract class FulcrumPlugin extends JavaPlugin{
   abstract protected void showPluginTitle();
 
   /** Allows child classes to register additional commands */
-  abstract protected void registerAdditionalCommands();
+  abstract protected void registerPluginCommands();
 
   /** Allows child classes to perform additional initialization tasks */
-  abstract protected void additionalInitializationTasks();
+  abstract protected void initializationTasks();
 
   /** Allows child classes to perform additional termination tasks */
-  abstract protected void additionalTerminationTasks();
+  abstract protected void terminationTasks();
 
   /**
    * Initializes the registries for the plugin.
@@ -130,7 +130,7 @@ public abstract class FulcrumPlugin extends JavaPlugin{
    * <p>
    * Can be overridden to add additional registries
    */
-  protected void initializeRegistries() {
+  private void initializeRegistries() {
     this.commandsRegistry       = new DefaultCommandsRegistry(this);
     this.configurationsRegistry = new DefaultConfigurationsRegistry(this);
   }
@@ -255,9 +255,5 @@ public abstract class FulcrumPlugin extends JavaPlugin{
     assert langHolder != null;
     return langHolder.getConfig();
   }
-
-  public abstract DatabaseGateway getDatabaseGateway();
-
-  public abstract ServicesRegistry getServicesRegistry();
 
 }

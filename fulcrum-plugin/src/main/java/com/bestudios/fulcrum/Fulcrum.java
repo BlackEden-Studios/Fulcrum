@@ -2,7 +2,6 @@ package com.bestudios.fulcrum;
 
 import com.bestudios.fulcrum.api.basic.FulcrumPlugin;
 import com.bestudios.fulcrum.api.database.DatabaseGateway;
-import com.bestudios.fulcrum.api.service.ServicesRegistry;
 import com.bestudios.fulcrum.api.util.Lock;
 import com.bestudios.fulcrum.database.RedisDatabaseGateway;
 import com.bestudios.fulcrum.service.FulcrumServicesRegistry;
@@ -12,8 +11,9 @@ import org.bukkit.scheduler.BukkitTask;
 
 public final class Fulcrum extends FulcrumPlugin {
 
+  /** The database gateway */
   private DatabaseGateway database;
-
+  /** The time tracker */
   private BukkitTask timeTracker;
 
   public static Fulcrum getInstance() {
@@ -53,18 +53,18 @@ public final class Fulcrum extends FulcrumPlugin {
   }
 
   @Override
-  protected void initializeRegistries(){
-    super.initializeRegistries();
-    this.servicesRegistry       = new FulcrumServicesRegistry(this);
+  protected void registerPluginCommands() {
+    // No additional commands to register in the core plugin}
   }
 
   @Override
-  protected void registerAdditionalCommands() {
-
-  }
-
-  @Override
-  protected void additionalInitializationTasks() {
+  protected void initializationTasks() {
+    // Initialize database gateway
+    database = new RedisDatabaseGateway(this);
+    if (!database.initialize(new FulcrumLock(), this.getConfig()))
+      this.getLogger().severe("Failed to initialize database gateway!");
+    // Initialize service registry
+    this.servicesRegistry  = new FulcrumServicesRegistry(this, database);
     this.servicesRegistry.registerServices();
     // Register centralized listeners
     this.getServer().getPluginManager().registerEvents(MenuListener.INSTANCE, this);
@@ -74,9 +74,9 @@ public final class Fulcrum extends FulcrumPlugin {
   }
 
   @Override
-  protected void additionalTerminationTasks() {
+  protected void terminationTasks() {
     // Terminate database gateway
-    if (!this.getDatabaseGateway().shutdown(new FulcrumLock()))
+    if (!this.database.shutdown(new FulcrumLock()))
       this.getLogger().severe("Failed to terminate database gateway!");
     else this.getLogger().info("Database gateway terminated successfully.");
 
@@ -84,17 +84,6 @@ public final class Fulcrum extends FulcrumPlugin {
     this.timeTracker.cancel();
     // Terminate any services
     this.getServer().getServicesManager().unregisterAll(this);
-  }
-
-  @Override
-  public DatabaseGateway getDatabaseGateway() {
-    if (database == null) database = new RedisDatabaseGateway(this);
-    return database;
-  }
-
-  @Override
-  public ServicesRegistry getServicesRegistry() {
-    return this.servicesRegistry;
   }
 
   /**

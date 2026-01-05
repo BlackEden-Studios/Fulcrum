@@ -31,13 +31,15 @@ public final class FulcrumServicesRegistry implements ServicesRegistry {
 
   /** The plugin instance */
   private final FulcrumPlugin plugin;
+  private final DatabaseGateway database;
 
   /**
    * Constructs a new FulcrumServicesRegistry with the given Fulcrum plugin instance.
    * @param pluginRef the Fulcrum plugin instance
    */
-  public FulcrumServicesRegistry(Fulcrum pluginRef) {
+  public FulcrumServicesRegistry(Fulcrum pluginRef, DatabaseGateway db) {
     this.plugin = pluginRef;
+    this.database = db;
   }
 
   @Override
@@ -68,12 +70,9 @@ public final class FulcrumServicesRegistry implements ServicesRegistry {
     // Custom items
     this.registerService(CustomItemsService.class, new ItemsAdderBridge(this.plugin, ServicePriority.Highest));
     // Database
-    this.registerService(DatabaseGateway.class, plugin.getDatabaseGateway());
+    this.registerService(DatabaseGateway.class, this.database);
     // Messaging
-    this.registerService(
-            MessageService.class,
-            new FulcrumMessageService(this.plugin, ServicePriority.Highest, plugin.getDatabaseGateway())
-    );
+    this.registerService(MessageService.class, new FulcrumMessageService(this.plugin, ServicePriority.Highest, this.database));
   }
 
 }
