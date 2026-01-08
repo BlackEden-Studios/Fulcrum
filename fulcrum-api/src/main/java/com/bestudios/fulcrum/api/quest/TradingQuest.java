@@ -1,4 +1,4 @@
-package com.bestudios.fulcrum.api.data;
+package com.bestudios.fulcrum.api.quest;
 
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -18,7 +18,7 @@ import java.util.stream.Collectors;
  * @version 1.0
  * @since   1.0
  */
-public record TradingQuestData(
+public record TradingQuest(
         Object provider,
         long seed,
         Map<MaterialData, Integer> materials,
@@ -26,7 +26,7 @@ public record TradingQuestData(
         int expReward
 ) {
 
-  public TradingQuestData {
+  public TradingQuest {
     materials = Map.copyOf(materials);
   }
 

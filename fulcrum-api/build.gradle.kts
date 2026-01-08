@@ -1,17 +1,21 @@
 plugins {
     `java-library`
-    id("com.vanniktech.maven.publish") version "0.30.0"
+    alias(libs.plugins.maven.publish) // Replaces id("...") version "..."
 }
 
 dependencies {
     // Paper API
-    compileOnly("io.papermc.paper:paper-api:1.21.10-R0.1-SNAPSHOT")
-    // Optional annotations (for @ApiStatus.Internal, etc.)
-    compileOnly("org.jetbrains:annotations:24.0.1")
-    compileOnly("net.milkbowl.vault:VaultUnlockedAPI:2.16")
+    compileOnly(libs.paper.api)
+
+    // Annotations
+    compileOnly(libs.jetbrains.annotations)
+
+    // Integrations
+    compileOnly(libs.vault.api)
+
     // Testing
-    testImplementation("org.junit.jupiter:junit-jupiter:5.10.0")
-    testRuntimeOnly("org.junit.platform:junit-platform-launcher")
+    testImplementation(libs.junit.jupiter)
+    testRuntimeOnly(libs.junit.platform.launcher)
 }
 
 tasks.test {
@@ -24,12 +28,9 @@ tasks.jar {
 
 mavenPublishing {
     publishToMavenCentral(com.vanniktech.maven.publish.SonatypeHost.CENTRAL_PORTAL)
-
     signAllPublications()
-
     coordinates(group as String?, "fulcrum-api", version as String?)
 
-    // 4. Metadata required by Central
     pom {
         name.set("Fulcrum API")
         description.set("API for the Fulcrum Minecraft Framework")

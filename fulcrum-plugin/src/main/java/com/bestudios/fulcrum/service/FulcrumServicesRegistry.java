@@ -11,7 +11,6 @@ import com.bestudios.fulcrum.api.service.economy.EconomyService;
 import com.bestudios.fulcrum.api.service.messaging.MessageService;
 import com.bestudios.fulcrum.api.service.permission.PermissionsService;
 import com.bestudios.fulcrum.api.service.team.TeamsService;
-import com.bestudios.fulcrum.database.RedisDatabaseGateway;
 import org.bukkit.plugin.RegisteredServiceProvider;
 import org.bukkit.plugin.ServicePriority;
 
@@ -67,6 +66,8 @@ public final class FulcrumServicesRegistry implements ServicesRegistry {
     LandsBridge lands = new LandsBridge(this.plugin, ServicePriority.Highest);
     this.registerService(ClaimsService.class, lands);
     this.registerService(TeamsService.class, lands);
+    // Regions
+    this.registerService(FulcrumRegionService.class, new FulcrumRegionService(this.plugin));
     // Custom items
     this.registerService(CustomItemsService.class, new ItemsAdderBridge(this.plugin, ServicePriority.Highest));
     // Database

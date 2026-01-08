@@ -1,0 +1,39 @@
+[versions]
+# Core
+paper = "1.21.10-R0.1-SNAPSHOT"
+annotations = "24.0.1"
+jedis = "7.0.0"
+
+# Integrations
+vault = "2.16"
+luckperms = "5.4"
+lands = "7.19.1"
+itemsadder = "4.0.10"
+
+# Testing
+junit = "5.10.0"
+
+# Plugins
+shadow = "8.1.1"
+maven-publish = "0.30.0"
+
+[libraries]
+# Core
+paper-api = { group = "io.papermc.paper", name = "paper-api", version.ref = "paper" }
+jetbrains-annotations = { group = "org.jetbrains", name = "annotations", version.ref = "annotations" }
+jedis = { group = "redis.clients", name = "jedis", version.ref = "jedis" }
+
+# Integrations
+vault-api = { group = "net.milkbowl.vault", name = "VaultUnlockedAPI", version.ref = "vault" }
+luckperms-api = { group = "net.luckperms", name = "api", version.ref = "luckperms" }
+lands-api = { group = "com.github.angeschossen", name = "LandsAPI", version.ref = "lands" }
+itemsadder-api = { group = "dev.lone", name = "api-itemsadder", version.ref = "itemsadder" }
+
+# Testing
+junit-jupiter = { group = "org.junit.jupiter", name = "junit-jupiter", version.ref = "junit" }
+# Platform launcher usually manages its own version or aligns with Jupiter
+junit-platform-launcher = { group = "org.junit.platform", name = "junit-platform-launcher" }
+
+[plugins]
+shadow = { id = "com.github.johnrengelman.shadow", version.ref = "shadow" }
+maven-publish = { id = "com.vanniktech.maven.publish", version.ref = "maven-publish" }
