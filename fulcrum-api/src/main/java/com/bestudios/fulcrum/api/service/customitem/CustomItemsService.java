@@ -163,26 +163,26 @@ public interface CustomItemsService extends Service {
   void customItemAction(@NotNull final ItemStack itemStack, Consumer<ItemStack> action);
 
   /**
-   * Places a custom block at the specified location.
+   * Places a block at the specified location, regardless of whether it is a custom block or not.
    *
-   * @param customBlockNamespaceID The name of the custom block to place
-   * @param location               The world location where the block should be placed
+   * @param blockNamespaceID The ID of the block to place
+   * @param location         The world location where the block should be placed
    */
-  boolean placeCustomBlock(@NotNull final String customBlockNamespaceID, Location location);
+  boolean placeBlock(@NotNull final String blockNamespaceID, Location location);
 
   /**
-   * Places a custom block at the specified location.
+   * Places a block at the specified location, regardless of whether it is a custom block or not.
    *
-   * @param customBlockItem The ItemStack of the custom block to place
-   * @param location        The world location where the block should be placed
+   * @param blockItem The ItemStack of the block to place
+   * @param location  The world location where the block should be placed
    */
-  boolean placeCustomBlock(@NotNull final ItemStack customBlockItem, Location location);
+  boolean placeBlock(@NotNull final ItemStack blockItem, Location location);
 
   /**
-   * Places a custom block at the specified location.
+   * Places a block at the specified location, regardless of whether it is a custom block or not.
    *
-   * @param block    The Block to be placed as a custom block
+   * @param block    The Block to be placed
    * @param location The world location where the block should be placed
    */
-  boolean placeCustomBlock(@NotNull final Block block, Location location);
+  boolean placeBlock(@NotNull final Block block, Location location);
 }

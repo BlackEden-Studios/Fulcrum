@@ -4,7 +4,9 @@ import com.bestudios.fulcrum.api.service.customitem.CustomItemsService;
 import dev.lone.itemsadder.api.CustomBlock;
 import dev.lone.itemsadder.api.CustomStack;
 import dev.lone.itemsadder.api.Events.ItemsAdderLoadDataEvent;
+import org.bukkit.Bukkit;
 import org.bukkit.Location;
+import org.bukkit.Material;
 import org.bukkit.block.Block;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
@@ -188,14 +190,14 @@ public class ItemsAdderBridge implements CustomItemsService {
   /**
    * Places a custom block at the specified location.
    *
-   * @param customBlockString the name of the custom block to place
+   * @param blockNamespaceID the name of the custom block to place
    * @param location          the world location where the block should be placed
    */
   @Override
-  public boolean placeCustomBlock(@NotNull final String customBlockString, Location location) {
-    CustomBlock customBlock = CustomBlock.getInstance(customBlockString);
-    if (customBlock == null) return false;
-    customBlock.place(location);
+  public boolean placeBlock(@NotNull final String blockNamespaceID, @NotNull final Location location) {
+    CustomBlock customBlock = CustomBlock.getInstance(blockNamespaceID);
+    if (customBlock == null) location.getBlock().setBlockData(Bukkit.createBlockData(blockNamespaceID));
+    else customBlock.place(location);
     return true;
   }
 
@@ -206,11 +208,8 @@ public class ItemsAdderBridge implements CustomItemsService {
    * @param location  the world location where the block should be placed
    */
   @Override
-  public boolean placeCustomBlock(@NotNull final ItemStack itemStack, Location location) {
-    CustomBlock customBlock = CustomBlock.byItemStack(itemStack);
-    if (customBlock == null) return false;
-    customBlock.place(location);
-    return true;
+  public boolean placeBlock(@NotNull final ItemStack itemStack, @NotNull final Location location) {
+    return placeBlock(getItemNamespaceID(itemStack), location);
   }
 
   /**
@@ -220,11 +219,8 @@ public class ItemsAdderBridge implements CustomItemsService {
    * @param location the world location where the block should be placed
    */
   @Override
-  public boolean placeCustomBlock(@NotNull final Block block, @NotNull Location location) {
-    CustomBlock customBlock = CustomBlock.byAlreadyPlaced(block);
-    if (customBlock == null) return false;
-    customBlock.place(location);
-    return true;
+  public boolean placeBlock(@NotNull final Block block, @NotNull final Location location) {
+    return placeBlock(getBlockNamespaceID(block), location);
   }
 
   @Override
