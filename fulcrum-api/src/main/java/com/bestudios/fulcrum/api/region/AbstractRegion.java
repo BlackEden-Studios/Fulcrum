@@ -81,11 +81,21 @@ public abstract class AbstractRegion<C extends FileConfiguration> implements Reg
    * @param value the value to set, or null to remove the key
    */
   protected void setData(@NotNull String key, @Nullable Object value) {
-    if (value == null) {
-      this.dataRegistry.remove(key);
-    } else {
+    if (value != null) {
       this.dataRegistry.put(key, value);
+    } else {
+      this.dataRegistry.remove(key);
     }
+  }
+
+  /**
+  * Helper for subclasses to populate the registry.
+  * @param key the key to set
+  * @param value the value to set
+  * @param defaultValue the default value to set if the value is null
+  */
+  protected void setData(@NotNull String key, @Nullable Object value, @NotNull Object defaultValue) {
+    this.dataRegistry.put(key, Objects.requireNonNullElse(value, defaultValue));
   }
 
   // --- Lifecycle ---
