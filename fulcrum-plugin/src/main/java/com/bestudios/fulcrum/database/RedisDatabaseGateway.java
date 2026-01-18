@@ -2,9 +2,9 @@ package com.bestudios.fulcrum.database;
 
 import com.bestudios.fulcrum.Fulcrum;
 import com.bestudios.fulcrum.api.basic.FulcrumPlugin;
-import com.bestudios.fulcrum.api.database.DatabaseGateway;
+import com.bestudios.fulcrum.api.service.database.DatabaseService;
 import com.bestudios.fulcrum.api.util.Lock;
-import com.bestudios.fulcrum.api.database.DatabaseQuery;
+import com.bestudios.fulcrum.api.service.database.DatabaseQuery;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.plugin.ServicePriority;
 import org.jetbrains.annotations.NotNull;
@@ -14,13 +14,12 @@ import redis.clients.jedis.JedisPool;
 import redis.clients.jedis.JedisPoolConfig;
 import redis.clients.jedis.exceptions.JedisConnectionException;
 
-import java.util.Arrays;
 import java.util.Map;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.function.Function;
 
 /**
- * Implementation of the DatabaseGateway interface based on Redis,
+ * Implementation of the DatabaseService interface based on Redis,
  * that provides methods to interact with a Redis database using Jedis.
  * <p>
  * It supports initializing and shutting down the connection pool,
@@ -30,11 +29,11 @@ import java.util.function.Function;
  * @version 1.0
  * @since   1.0
  *
- * @see DatabaseGateway
+ * @see DatabaseService
  * @see Jedis
  * @see JedisPool
  */
-public class RedisDatabaseGateway implements DatabaseGateway {
+public class RedisDatabaseGateway implements DatabaseService {
 
   /** Redis connection pool */
   private JedisPool pool;

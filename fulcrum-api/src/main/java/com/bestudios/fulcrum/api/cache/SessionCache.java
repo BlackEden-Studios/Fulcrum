@@ -38,11 +38,11 @@ public class SessionCache<T> extends SmartCache<T> {
   public SessionCache(
           int maxEntries,
           @NotNull Plugin pluginRef,
-          @NotNull PlayerDataSaver<T>  dataSaverRef,
-          @NotNull PlayerDataLoader<T> dataLoaderRef
+          @NotNull PlayerDataLoader<T> dataLoaderRef,
+          @NotNull PlayerDataSaver<T>  dataSaverRef
   ) {
     super(maxEntries, pluginRef, dataSaverRef);
-    dataLoader = Objects.requireNonNull(dataLoaderRef, Utils.messageRequireNonNull("data loader"));
+    this.dataLoader = Objects.requireNonNull(dataLoaderRef, Utils.messageRequireNonNull("data loader"));
 
     // Register listener for player join events
     SessionCacheListener sessionListener = new SessionCacheListener();
@@ -52,15 +52,17 @@ public class SessionCache<T> extends SmartCache<T> {
   /**
    * Creates a new SessionCache sized for maximum server capacity.
    *
-   * @param pluginRef The pluginRef instance
+   * @param pluginRef     The pluginRef instance
    * @param dataLoaderRef The loader responsible for creating/retrieving player data
+   * @param dataSaverRef  The saver responsible for saving player data
    */
   public SessionCache(
           @NotNull Plugin pluginRef,
-          @NotNull PlayerDataSaver<T> dataSaverRef,
-          @NotNull PlayerDataLoader<T> dataLoaderRef
+          @NotNull PlayerDataLoader<T> dataLoaderRef,
+          @NotNull PlayerDataSaver<T> dataSaverRef
+
   ) {
-    this(pluginRef.getServer().getMaxPlayers(), pluginRef, dataSaverRef, dataLoaderRef);
+    this(pluginRef.getServer().getMaxPlayers(), pluginRef, dataLoaderRef, dataSaverRef);
   }
 
   /**

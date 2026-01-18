@@ -69,8 +69,10 @@ public class DefaultConfigurationHolder implements ConfigurationHolder<YamlConfi
   }
 
   @Override
-  public YamlConfiguration getConfig() {
-    if (config == null) reloadConfig();
+  public @NotNull YamlConfiguration getConfig() {
+    if (config == null)
+      if (!reloadConfig())
+        config = new YamlConfiguration();
     return config;
   }
 

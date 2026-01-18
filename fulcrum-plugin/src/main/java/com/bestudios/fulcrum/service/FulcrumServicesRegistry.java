@@ -2,7 +2,8 @@ package com.bestudios.fulcrum.service;
 
 import com.bestudios.fulcrum.Fulcrum;
 import com.bestudios.fulcrum.api.basic.FulcrumPlugin;
-import com.bestudios.fulcrum.api.database.DatabaseGateway;
+import com.bestudios.fulcrum.api.service.claim.RegionService;
+import com.bestudios.fulcrum.api.service.database.DatabaseService;
 import com.bestudios.fulcrum.api.service.ServicesRegistry;
 import com.bestudios.fulcrum.api.service.Service;
 import com.bestudios.fulcrum.api.service.claim.ClaimsService;
@@ -30,13 +31,13 @@ public final class FulcrumServicesRegistry implements ServicesRegistry {
 
   /** The plugin instance */
   private final FulcrumPlugin plugin;
-  private final DatabaseGateway database;
+  private final DatabaseService database;
 
   /**
    * Constructs a new FulcrumServicesRegistry with the given Fulcrum plugin instance.
    * @param pluginRef the Fulcrum plugin instance
    */
-  public FulcrumServicesRegistry(Fulcrum pluginRef, DatabaseGateway db) {
+  public FulcrumServicesRegistry(Fulcrum pluginRef, DatabaseService db) {
     this.plugin = pluginRef;
     this.database = db;
   }
@@ -67,11 +68,11 @@ public final class FulcrumServicesRegistry implements ServicesRegistry {
     this.registerService(ClaimsService.class, lands);
     this.registerService(TeamsService.class, lands);
     // Regions
-    this.registerService(FulcrumRegionService.class, new FulcrumRegionService(this.plugin));
+    this.registerService(RegionService.class, new FulcrumRegionService(this.plugin));
     // Custom items
     this.registerService(CustomItemsService.class, new ItemsAdderBridge(this.plugin, ServicePriority.Highest));
     // Database
-    this.registerService(DatabaseGateway.class, this.database);
+    this.registerService(DatabaseService.class, this.database);
     // Messaging
     this.registerService(MessageService.class, new FulcrumMessageService(this.plugin, ServicePriority.Highest, this.database));
   }

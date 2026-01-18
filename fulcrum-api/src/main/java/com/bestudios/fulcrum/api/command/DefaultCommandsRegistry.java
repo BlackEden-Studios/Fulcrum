@@ -11,7 +11,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Default implementation of {@link CommandsRegistry} that acts as a registry pattern for plugin commands.
- * <p>
+ * <br>
  * This implementation is thread-safe and uses {@link CommandTree} internally to handle command execution
  * and tab completion.
  * <p>

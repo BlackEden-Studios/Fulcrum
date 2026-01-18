@@ -1,8 +1,8 @@
 package com.bestudios.fulcrum.service;
 
 import com.bestudios.fulcrum.api.basic.FulcrumPlugin;
-import com.bestudios.fulcrum.api.region.Position;
-import com.bestudios.fulcrum.api.region.Region;
+import com.bestudios.fulcrum.api.service.claim.Position;
+import com.bestudios.fulcrum.api.service.claim.Region;
 import com.bestudios.fulcrum.api.service.claim.RegionService;
 import org.bukkit.plugin.ServicePriority;
 import org.jetbrains.annotations.NotNull;
@@ -15,6 +15,10 @@ import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Default thread-safe implementation of the RegionService.
+ *
+ * @author Bestialus
+ * @version 1.0
+ * @since   1.0
  */
 public class FulcrumRegionService implements RegionService {
 

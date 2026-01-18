@@ -1,7 +1,7 @@
 package com.bestudios.fulcrum;
 
 import com.bestudios.fulcrum.api.basic.FulcrumPlugin;
-import com.bestudios.fulcrum.api.database.DatabaseGateway;
+import com.bestudios.fulcrum.api.service.database.DatabaseService;
 import com.bestudios.fulcrum.api.util.Lock;
 import com.bestudios.fulcrum.database.RedisDatabaseGateway;
 import com.bestudios.fulcrum.service.FulcrumServicesRegistry;
@@ -12,7 +12,7 @@ import org.bukkit.scheduler.BukkitTask;
 public final class Fulcrum extends FulcrumPlugin {
 
   /** The database gateway */
-  private DatabaseGateway database;
+  private DatabaseService database;
   /** The time tracker */
   private BukkitTask timeTracker;
 

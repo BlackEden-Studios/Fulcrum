@@ -1,4 +1,4 @@
-package com.bestudios.fulcrum.api.region;
+package com.bestudios.fulcrum.api.service.claim;
 
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
@@ -78,14 +78,7 @@ public record Position(JavaPlugin plugin, String worldName, double x, double y, 
    * @return the distance, or -1 if the positions are in different worlds
    */
   public double distance(Position other) {
-    if (!this.worldName.equals(other.worldName))
-      return -1;
-
-    double dx = this.x - other.x;
-    double dy = this.y - other.y;
-    double dz = this.z - other.z;
-
-    return Math.sqrt(dx * dx + dy * dy + dz * dz);
+    return Math.sqrt(distanceSquared(other));
   }
 
   /**
@@ -95,7 +88,7 @@ public record Position(JavaPlugin plugin, String worldName, double x, double y, 
    * @param other the other Position
    * @return the squared distance, or -1 if the positions are in different worlds
    */
-  public double distanceSquared(Position other) {
+  public double distanceSquared(@NotNull Position other) {
     if (!this.worldName.equals(other.worldName))
       return -1;
 
@@ -112,7 +105,7 @@ public record Position(JavaPlugin plugin, String worldName, double x, double y, 
    * @param other the other Position
    * @return the 2D distance, or -1 if the positions are in different worlds
    */
-  public double distance2D(Position other) {
+  public double distance2D(@NotNull Position other) {
     if (!this.worldName.equals(other.worldName)) {
       return -1;
     }
@@ -131,7 +124,7 @@ public record Position(JavaPlugin plugin, String worldName, double x, double y, 
    * @param offsetZ the z offset
    * @return a new Position with the offset applied
    */
-  public Position add(double offsetX, double offsetY, double offsetZ) {
+  public @NotNull Position add(double offsetX, double offsetY, double offsetZ) {
     return new Position(plugin, worldName, x + offsetX, y + offsetY, z + offsetZ);
   }
 
@@ -172,7 +165,7 @@ public record Position(JavaPlugin plugin, String worldName, double x, double y, 
    * @param other the other Position
    * @return true if both positions are in the same world
    */
-  public boolean isSameWorld(Position other) {
+  public boolean isSameWorld(@NotNull Position other) {
     return this.worldName.equals(other.worldName);
   }
 
@@ -182,7 +175,7 @@ public record Position(JavaPlugin plugin, String worldName, double x, double y, 
    * @param world the Bukkit World to compare
    * @return true if this Position is in the same world as the provided World
    */
-  public boolean isSameWorld(World world) {
+  public boolean isSameWorld(@NotNull World world) {
     return this.worldName.equals(world.getName());
   }
 
@@ -202,7 +195,7 @@ public record Position(JavaPlugin plugin, String worldName, double x, double y, 
    * @param location the Bukkit Location to compare
    * @return true if this Position is in the same world as the provided Location
    */
-  public boolean isSameWorld(Location location) {
+  public boolean isSameWorld(@NotNull Location location) {
     return this.worldName.equals(location.getWorld().getName());
   }
 
@@ -250,7 +243,7 @@ public record Position(JavaPlugin plugin, String worldName, double x, double y, 
    *
    * @return a serializable string representation
    */
-  public String serialize() {
+  public @NotNull String serialize() {
     return String.format("%s,%.6f,%.6f,%.6f", worldName, x, y, z);
   }
 
@@ -344,7 +337,7 @@ public record Position(JavaPlugin plugin, String worldName, double x, double y, 
    * @return a new Position
    * @throws IllegalArgumentException if the coordinate format is invalid
    */
-  public static Position fromCoordinateString(@NotNull JavaPlugin plugin, @NotNull String worldName,
+  public static @NotNull Position fromCoordinateString(@NotNull JavaPlugin plugin, @NotNull String worldName,
       @NotNull String coordinates) {
 
     if (worldName.trim().isEmpty())

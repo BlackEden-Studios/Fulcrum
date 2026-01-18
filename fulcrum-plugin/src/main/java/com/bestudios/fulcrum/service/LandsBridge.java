@@ -1,10 +1,10 @@
 package com.bestudios.fulcrum.service;
 
 import com.bestudios.fulcrum.api.cache.PlayerDataLoader;
-import com.bestudios.fulcrum.api.cache.PlayerDataSaver;
 import com.bestudios.fulcrum.api.cache.SessionCache;
 import com.bestudios.fulcrum.api.service.claim.ClaimsService;
 import com.bestudios.fulcrum.api.service.team.TeamsService;
+import com.bestudios.fulcrum.api.util.DummySaver;
 import me.angeschossen.lands.api.LandsIntegration;
 import me.angeschossen.lands.api.events.LandTrustPlayerEvent;
 import me.angeschossen.lands.api.events.LandUntrustPlayerEvent;
@@ -24,7 +24,6 @@ import org.bukkit.plugin.ServicePriority;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.Map;
 import java.util.Objects;
 import java.util.UUID;
 
@@ -35,6 +34,7 @@ import java.util.UUID;
  * @author Bestialus
  * @version 1.0
  * @since   1.0
+ *
  * @see ClaimsService
  * @see TeamsService
  */
@@ -71,7 +71,7 @@ public class LandsBridge implements ClaimsService, TeamsService {
     this.api = LandsIntegration.of(pluginRef);
     this.world = this.api.getWorld(bukkitWorld);
     if (this.world == null) throw new IllegalStateException(PROVIDER + " is not enabled for world 'world'");
-    this.landCache = new SessionCache<>(pluginRef, new LandDataSaver(), new LandDataLoader());
+    this.landCache = new SessionCache<>(pluginRef, new LandDataLoader(), new DummySaver<>());
     // Register event listeners to keep the cache updated
     pluginRef.getServer().getPluginManager().registerEvents(new CacheListener(), pluginRef);
   }
@@ -209,18 +209,6 @@ public class LandsBridge implements ClaimsService, TeamsService {
       if (landPlayer.getLands().isEmpty()) return null;
       // For simplicity, return the first land the player owns
       return landPlayer.getLands().iterator().next();
-    }
-  }
-
-  /**
-  * Data saver for player land data.
-  * Does nothing.
-  */
-  private final class LandDataSaver implements PlayerDataSaver<Land> {
-
-    @Override
-    public boolean save(Map.Entry<UUID, Land> data) {
-      return false;
     }
   }
 

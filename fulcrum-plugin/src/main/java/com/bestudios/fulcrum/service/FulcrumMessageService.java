@@ -1,8 +1,8 @@
 package com.bestudios.fulcrum.service;
 
 import com.bestudios.fulcrum.api.basic.FulcrumPlugin;
-import com.bestudios.fulcrum.api.database.DatabaseGateway;
-import com.bestudios.fulcrum.api.database.DatabaseQuery;
+import com.bestudios.fulcrum.api.service.database.DatabaseService;
+import com.bestudios.fulcrum.api.service.database.DatabaseQuery;
 import com.bestudios.fulcrum.api.service.messaging.Message;
 import com.bestudios.fulcrum.api.service.messaging.MessageService;
 import com.bestudios.fulcrum.api.util.Utils;
@@ -39,22 +39,22 @@ public class FulcrumMessageService implements MessageService {
   /** The service priority for this integration. */
   private final ServicePriority priority;
   /** The database gateway instance. */
-  private final DatabaseGateway gateway;
+  private final DatabaseService gateway;
 
   /**
    * Constructs a new FulcrumMessageService with the provided plugin and database gateway.
    *
    * @param pluginRef The Fulcrum plugin instance
-   * @param databaseGateway The database gateway instance
+   * @param databaseService The database gateway instance
    */
   public FulcrumMessageService(
           @NotNull FulcrumPlugin pluginRef,
           @NotNull ServicePriority servicePriority,
-          @NotNull DatabaseGateway databaseGateway
+          @NotNull DatabaseService databaseService
   ) {
     this.plugin   = Objects.requireNonNull(pluginRef,       Utils.messageRequireNonNull("plugin"));
     this.priority = Objects.requireNonNull(servicePriority, Utils.messageRequireNonNull("priority"));
-    this.gateway  = Objects.requireNonNull(databaseGateway, Utils.messageRequireNonNull("gateway"));
+    this.gateway  = Objects.requireNonNull(databaseService, Utils.messageRequireNonNull("gateway"));
   }
 
   @Override @NotNull

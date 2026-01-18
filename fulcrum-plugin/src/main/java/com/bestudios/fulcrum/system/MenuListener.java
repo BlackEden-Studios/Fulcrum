@@ -6,6 +6,15 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.inventory.InventoryClickEvent;
 
+/**
+ * Listens for clicks on menus and handles them accordingly.
+ *
+ * @author Bestialus
+ * @version 1.0
+ * @since   1.0
+ *
+ * @see Menu
+ */
 public class MenuListener implements Listener {
 
   public static final MenuListener INSTANCE = new MenuListener();

@@ -21,7 +21,7 @@ import static com.bestudios.fulcrum.api.command.CommandUtils.DEFAULT_LOCALE;
 
 /**
  * A functional approach to handling nested Minecraft commands.
- * <p>
+ * <br>
  * Supports command trees like: /plugin_name command subcommand subcommands...
  *
  * @author Bestialus

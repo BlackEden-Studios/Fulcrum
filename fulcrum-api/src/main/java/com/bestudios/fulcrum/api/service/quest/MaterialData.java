@@ -1,4 +1,4 @@
-package com.bestudios.fulcrum.api.quest;
+package com.bestudios.fulcrum.api.service.quest;
 
 import org.bukkit.Material;
 import org.bukkit.configuration.ConfigurationSection;

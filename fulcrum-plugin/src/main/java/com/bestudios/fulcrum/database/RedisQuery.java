@@ -1,7 +1,7 @@
 package com.bestudios.fulcrum.database;
 
-import com.bestudios.fulcrum.api.database.DatabaseGateway;
-import com.bestudios.fulcrum.api.database.DatabaseQuery;
+import com.bestudios.fulcrum.api.service.database.DatabaseService;
+import com.bestudios.fulcrum.api.service.database.DatabaseQuery;
 
 /**
  * Represents a Redis database query.
@@ -11,7 +11,7 @@ import com.bestudios.fulcrum.api.database.DatabaseQuery;
  * @since   1.0
  *
  * @see DatabaseQuery
- * @see DatabaseGateway
+ * @see DatabaseService
  */
 public class RedisQuery implements DatabaseQuery {
 

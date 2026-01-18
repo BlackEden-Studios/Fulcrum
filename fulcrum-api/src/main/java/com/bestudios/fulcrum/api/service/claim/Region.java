@@ -1,4 +1,4 @@
-package com.bestudios.fulcrum.api.region;
+package com.bestudios.fulcrum.api.service.claim;
 
 import com.bestudios.fulcrum.api.configuration.ConfigurationHolder;
 import org.bukkit.configuration.file.FileConfiguration;

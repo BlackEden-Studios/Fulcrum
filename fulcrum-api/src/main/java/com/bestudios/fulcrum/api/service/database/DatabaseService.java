@@ -1,4 +1,4 @@
-package com.bestudios.fulcrum.api.database;
+package com.bestudios.fulcrum.api.service.database;
 
 import com.bestudios.fulcrum.api.service.Service;
 import com.bestudios.fulcrum.api.util.Lock;
@@ -20,7 +20,7 @@ import java.util.Map;
  * @see DatabaseQuery
  * @see Lock
  */
-public interface DatabaseGateway extends Service {
+public interface DatabaseService extends Service {
 
   /**
    * Initializes the database connection with the provided configuration values.

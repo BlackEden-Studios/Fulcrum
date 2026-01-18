@@ -8,7 +8,6 @@ import com.bestudios.fulcrum.api.configuration.ConfigurationHolder;
 import com.bestudios.fulcrum.api.configuration.ConfigurationsRegistry;
 import com.bestudios.fulcrum.api.configuration.DefaultConfigurationHolder;
 import com.bestudios.fulcrum.api.configuration.DefaultConfigurationsRegistry;
-import com.bestudios.fulcrum.api.database.DatabaseGateway;
 import com.bestudios.fulcrum.api.service.ServicesRegistry;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
@@ -28,7 +27,7 @@ import java.util.logging.Level;
  * serving as the foundation for all Fulcrum framework plugins. It automatically
  * initializes and manages registries for commands and configurations, providing
  * a streamlined API for plugin development.
- * <p>
+ * <br>
  * Features include:
  * <ul>
  *   <li>Automatic registration of base configuration (config.yml)</li>
@@ -36,14 +35,14 @@ import java.util.logging.Level;
  *   <li>Built-in debug command for runtime debugging</li>
  *   <li>Simple API for child plugins to register custom commands</li>
  * </ul>
- * <p>
+ * <br>
  * Child plugins should override {@link #registerPluginCommands()} and {@link #initializationTasks()}
  * to perform custom initialization tasks such as registering event listeners, scheduling tasks, or setting up
  * additional configurations. Always call {@code super.onEnable()} to ensure proper initialization
  * of the base functionality.
- * <p>
+ * <br>
  * The same goes for {@link #terminationTasks()} in {@link #onDisable()} to handle any cleanup tasks.
- * <p>
+ * <br>
  * The default configuration structure expects:
  * <ul>
  *   <li>A {@code config.yml} file in the plugin's data folder</li>
@@ -95,7 +94,7 @@ public abstract class FulcrumPlugin extends JavaPlugin{
     // Register debug command
     registerDebugCommand();
 
-    // Additional initialization tasks can be performed by child classes here
+    // Child classes can perform additional initialization tasks here
     initializationTasks();
 
     // Register other commands if needed
@@ -127,8 +126,6 @@ public abstract class FulcrumPlugin extends JavaPlugin{
   /**
    * Initializes the registries for the plugin.
    * This method is called during plugin initialization.
-   * <p>
-   * Can be overridden to add additional registries
    */
   private void initializeRegistries() {
     this.commandsRegistry       = new DefaultCommandsRegistry(this);
@@ -157,9 +154,8 @@ public abstract class FulcrumPlugin extends JavaPlugin{
     // Define the language folder
     File languageFolder = new File(getDataFolder(), "languages");
     // Define the language file
-    String languageFileName = configHolder.getConfig() != null ?
-            configurationFileName(configHolder.getConfig().getString( "language", DEFAULT_LANGUAGE)) :
-            configurationFileName(DEFAULT_LANGUAGE);
+    configHolder.getConfig();
+    String languageFileName = configurationFileName(configHolder.getConfig().getString( "language", DEFAULT_LANGUAGE));
     File languageFile = new File(languageFolder, languageFileName);
 
     // Register the language configuration holder
@@ -242,14 +238,23 @@ public abstract class FulcrumPlugin extends JavaPlugin{
     return debug;
   }
 
+  /**
+   * @return the CommandsRegistry instance.
+   */
   public CommandsRegistry<CommandTree, CommandWrapper> getCommandsRegistry() {
     return commandsRegistry;
   }
 
+  /**
+   * @return the ConfigurationsRegistry instance.
+   */
   public ConfigurationsRegistry<YamlConfiguration> getConfigurationsRegistry() {
     return configurationsRegistry;
   }
 
+  /**
+   * @return the language configuration file.
+   */
   public FileConfiguration getLanguageConfiguration() {
     ConfigurationHolder<?> langHolder = configurationsRegistry.getHolder("language");
     assert langHolder != null;

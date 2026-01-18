@@ -29,9 +29,9 @@ public interface ConfigurationHolder<T extends FileConfiguration> {
    * Retrieves the loaded configuration instance.
    * Implementations should load it from disk if it is not yet loaded.
    *
-   * @return The loaded configuration object, or {@code null} if loading failed.
+   * @return The loaded configuration object, or a brand new one if loading failed.
    */
-  @Nullable
+  @NotNull
   T getConfig();
 
   /**

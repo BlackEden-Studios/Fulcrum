@@ -1,4 +1,4 @@
-package com.bestudios.fulcrum.api.database;
+package com.bestudios.fulcrum.api.service.database;
 
 /**
  * Functional interface representing a database query.
@@ -8,7 +8,7 @@ package com.bestudios.fulcrum.api.database;
  * @version 1.0
  * @since   1.0
  *
- * @see DatabaseGateway
+ * @see DatabaseService
  */
 @FunctionalInterface
 public interface DatabaseQuery {

@@ -8,19 +8,19 @@ import java.util.Map;
 
 /**
  * Central registry for plugin commands.
- *
- * <p>Implementations should handle command registration and provide
- * access to CommandExecutor and TabCompleter instances for Paper integration.</p>
- *
- * <p>This interface uses generics to ensure type safety while maintaining flexibility
+ * <br>
+ * Implementations should handle command registration and provide
+ * access to CommandExecutor and TabCompleter instances for Paper integration.
+ * <p>
+ * This interface uses generics to ensure type safety while maintaining flexibility
  * for different command handler implementations. The generic type parameter must implement
- * both {@link CommandExecutor} and {@link TabCompleter} interfaces.</p>
+ * both {@link CommandExecutor} and {@link TabCompleter} interfaces.
  *
  * @param <T> the type of command handler that implements both CommandExecutor and TabCompleter
  *
  * @author Bestialus
  * @version 1.0
- * @since 1.0
+ * @since   1.0
  * @see CommandExecutor
  * @see TabCompleter
  * @see CommandTree

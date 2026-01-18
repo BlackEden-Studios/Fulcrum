@@ -1,6 +1,6 @@
 [versions]
 # Core
-paper = "1.21.10-R0.1-SNAPSHOT"
+paper = "1.21.11-R0.1-SNAPSHOT"
 annotations = "24.0.1"
 jedis = "7.0.0"
 

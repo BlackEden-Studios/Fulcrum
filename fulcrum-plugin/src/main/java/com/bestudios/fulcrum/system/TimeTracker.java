@@ -10,9 +10,16 @@ import java.time.LocalTime;
 /**
  * TimeTracker is responsible for tracking elapsed time and triggering periodic events.
  * This class follows the Singleton pattern and implements Runnable to be executed at scheduled intervals.
- * <p>
+ * <br>
  * The class calculates the time remaining until the next daily reset (read from the configuration file)
  * and triggers a TimerUpdateEvent when that time is reached.
+ *
+ * @author Bestialus
+ * @version 1.0
+ * @since   1.0
+ *
+ * @see TimerUpdateEvent
+ * @see TimerInfo
  */
 public class TimeTracker implements Runnable {
 
@@ -23,7 +30,7 @@ public class TimeTracker implements Runnable {
   private static final long UPDATE_TIME = Duration.between(
           LocalTime.now(),
           LocalTime.of(Fulcrum.getInstance().getConfig().getInt("daily_reset_hour", 6), 0))
-      .toSeconds();
+                   .toSeconds();
 
   /**
    * Singleton instance of the TimeTracker
@@ -62,8 +69,7 @@ public class TimeTracker implements Runnable {
   @Override
   public void run() {
     TimerInfo.setElapsedTime((TimerInfo.getElapsedTime() + 1));
-    if (TimerInfo.getElapsedTime() % UPDATE_TIME == 0) {
+    if (TimerInfo.getElapsedTime() % UPDATE_TIME == 0)
       Fulcrum.getInstance().getServer().getPluginManager().callEvent(new TimerUpdateEvent());
-    }
   }
 }

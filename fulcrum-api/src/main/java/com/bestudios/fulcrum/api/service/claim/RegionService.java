@@ -1,7 +1,5 @@
 package com.bestudios.fulcrum.api.service.claim;
 
-import com.bestudios.fulcrum.api.region.Position;
-import com.bestudios.fulcrum.api.region.Region;
 import com.bestudios.fulcrum.api.service.Service;
 import org.jetbrains.annotations.NotNull;
 
@@ -10,10 +8,16 @@ import java.util.Optional;
 
 /**
  * The central registry service for managing custom Regions.
- * <p>
+ * <br>
  * Plugins can register their specialized regions here, allowing other plugins
  * to query them spatially or by ID without knowing the implementation details.
- * </p>
+ *
+ * @author Bestialus
+ * @version 1.0
+ * @since   1.0
+ *
+ * @see Region
+ * @see Service
  */
 public interface RegionService extends Service {
 

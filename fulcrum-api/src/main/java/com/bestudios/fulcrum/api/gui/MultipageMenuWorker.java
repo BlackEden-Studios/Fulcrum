@@ -12,8 +12,9 @@ import java.util.function.Consumer;
  *
  * @author Bestialus
  * @version 1.0
+ * @since   1.0
+ *
  * @see MenuWorker
- * @since 1.0
  */
 public interface MultipageMenuWorker extends MenuWorker {
 

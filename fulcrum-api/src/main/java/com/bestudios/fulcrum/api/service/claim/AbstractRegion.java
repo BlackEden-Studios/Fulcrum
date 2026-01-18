@@ -1,4 +1,4 @@
-package com.bestudios.fulcrum.api.region;
+package com.bestudios.fulcrum.api.service.claim;
 
 import com.bestudios.fulcrum.api.configuration.ConfigurationHolder;
 import org.bukkit.configuration.file.FileConfiguration;
@@ -16,6 +16,12 @@ import java.util.concurrent.ConcurrentHashMap;
  * <br>
  * Manages the internal data registry and configuration lifecycle,
  * leaving the spatial logic {@link #contains(Position)} to specific implementations.
+ *
+ * @author Bestialus
+ * @version 1.0
+ * @since   1.0
+ *
+ * @see Position
  */
 public abstract class AbstractRegion<C extends FileConfiguration> implements Region<C> {
 
