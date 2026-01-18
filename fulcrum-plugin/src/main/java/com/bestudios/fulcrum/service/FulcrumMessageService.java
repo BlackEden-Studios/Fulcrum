@@ -49,12 +49,12 @@ public class FulcrumMessageService implements MessageService {
    */
   public FulcrumMessageService(
           @NotNull FulcrumPlugin pluginRef,
-          @NotNull ServicePriority servicePriority,
-          @NotNull DatabaseService databaseService
+          @NotNull DatabaseService databaseService,
+          @NotNull ServicePriority servicePriority
   ) {
     this.plugin   = Objects.requireNonNull(pluginRef,       Utils.messageRequireNonNull("plugin"));
-    this.priority = Objects.requireNonNull(servicePriority, Utils.messageRequireNonNull("priority"));
     this.gateway  = Objects.requireNonNull(databaseService, Utils.messageRequireNonNull("gateway"));
+    this.priority = Objects.requireNonNull(servicePriority, Utils.messageRequireNonNull("priority"));
   }
 
   @Override @NotNull

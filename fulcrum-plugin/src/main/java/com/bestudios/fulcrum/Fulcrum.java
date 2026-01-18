@@ -7,6 +7,7 @@ import com.bestudios.fulcrum.database.RedisDatabaseGateway;
 import com.bestudios.fulcrum.service.FulcrumServicesRegistry;
 import com.bestudios.fulcrum.system.MenuListener;
 import com.bestudios.fulcrum.system.TimeTracker;
+import org.bukkit.plugin.ServicePriority;
 import org.bukkit.scheduler.BukkitTask;
 
 public final class Fulcrum extends FulcrumPlugin {
@@ -16,6 +17,9 @@ public final class Fulcrum extends FulcrumPlugin {
   /** The time tracker */
   private BukkitTask timeTracker;
 
+  /**
+   * @return the singleton instance of the plugin
+   */
   public static Fulcrum getInstance() {
     return getPlugin(Fulcrum.class);
   }
@@ -60,7 +64,7 @@ public final class Fulcrum extends FulcrumPlugin {
   @Override
   protected void initializationTasks() {
     // Initialize database gateway
-    database = new RedisDatabaseGateway(this);
+    database = new RedisDatabaseGateway(this, ServicePriority.Highest);
     if (!database.initialize(new FulcrumLock(), this.getConfig()))
       this.getLogger().severe("Failed to initialize database gateway!");
     // Initialize service registry

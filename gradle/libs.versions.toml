@@ -6,8 +6,8 @@ jedis = "7.0.0"
 
 # Integrations
 vault = "2.16"
-luckperms = "5.4"
-lands = "7.19.1"
+luckperms = "5.5"
+lands = "7.23.1"
 itemsadder = "4.0.10"
 
 # Testing

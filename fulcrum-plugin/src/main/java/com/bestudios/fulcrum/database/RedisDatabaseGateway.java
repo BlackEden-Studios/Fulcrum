@@ -21,7 +21,7 @@ import java.util.function.Function;
 /**
  * Implementation of the DatabaseService interface based on Redis,
  * that provides methods to interact with a Redis database using Jedis.
- * <p>
+ * <br>
  * It supports initializing and shutting down the connection pool,
  * as well as performing CRUD operations on the Redis database.
  *
@@ -51,14 +51,18 @@ public class RedisDatabaseGateway implements DatabaseService {
   private boolean enabled;
   /** Reference to the Fulcrum plugin */
   private final FulcrumPlugin plugin;
+  /** The service priority */
+  private final ServicePriority priority;
 
   /**
    * Constructor for RedisDatabaseGateway.
    *
    * @param pluginRef The Fulcrum plugin instance
+   * @param priority  The service priority
    */
-  public RedisDatabaseGateway(FulcrumPlugin pluginRef) {
+  public RedisDatabaseGateway(FulcrumPlugin pluginRef, ServicePriority priority) {
     this.plugin = pluginRef;
+    this.priority = priority;
     this.enabled = false;
   }
 
@@ -332,7 +336,7 @@ public class RedisDatabaseGateway implements DatabaseService {
 
   @Override
   public ServicePriority getPriority() {
-    return ServicePriority.Highest;
+    return this.priority;
   }
 
   @Override

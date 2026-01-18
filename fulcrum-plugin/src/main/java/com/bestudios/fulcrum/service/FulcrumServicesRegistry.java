@@ -9,6 +9,7 @@ import com.bestudios.fulcrum.api.service.Service;
 import com.bestudios.fulcrum.api.service.claim.ClaimsService;
 import com.bestudios.fulcrum.api.service.customitem.CustomItemsService;
 import com.bestudios.fulcrum.api.service.economy.EconomyService;
+import com.bestudios.fulcrum.api.service.information.InformationService;
 import com.bestudios.fulcrum.api.service.messaging.MessageService;
 import com.bestudios.fulcrum.api.service.permission.PermissionsService;
 import com.bestudios.fulcrum.api.service.team.TeamsService;
@@ -59,6 +60,8 @@ public final class FulcrumServicesRegistry implements ServicesRegistry {
 
   @Override
   public void registerServices() {
+    // Information
+    this.registerService(InformationService.class, new FulcrumInformationService(this.plugin, ServicePriority.Highest));
     // Economy
     this.registerService(EconomyService.class, new TheNewEconomyBridge(this.plugin, ServicePriority.Highest));
     // Permissions
@@ -68,13 +71,13 @@ public final class FulcrumServicesRegistry implements ServicesRegistry {
     this.registerService(ClaimsService.class, lands);
     this.registerService(TeamsService.class, lands);
     // Regions
-    this.registerService(RegionService.class, new FulcrumRegionService(this.plugin));
+    this.registerService(RegionService.class, new FulcrumRegionService(this.plugin, ServicePriority.Highest));
     // Custom items
     this.registerService(CustomItemsService.class, new ItemsAdderBridge(this.plugin, ServicePriority.Highest));
     // Database
     this.registerService(DatabaseService.class, this.database);
     // Messaging
-    this.registerService(MessageService.class, new FulcrumMessageService(this.plugin, ServicePriority.Highest, this.database));
+    this.registerService(MessageService.class, new FulcrumMessageService(this.plugin, this.database, ServicePriority.Highest));
   }
 
 }

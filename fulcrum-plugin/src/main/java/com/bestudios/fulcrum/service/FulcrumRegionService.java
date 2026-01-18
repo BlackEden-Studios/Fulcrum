@@ -22,7 +22,11 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public class FulcrumRegionService implements RegionService {
 
+  /** The plugin instance */
   private final FulcrumPlugin plugin;
+  /** The service priority */
+  private final ServicePriority priority;
+
   /**
    * The registry.
    * Key: Region ID
@@ -30,15 +34,16 @@ public class FulcrumRegionService implements RegionService {
    */
   private final Map<String, Region<?>> registry = new ConcurrentHashMap<>();
 
-  public FulcrumRegionService(FulcrumPlugin plugin) {
+  public FulcrumRegionService(FulcrumPlugin plugin, ServicePriority priority) {
     this.plugin = plugin;
+    this.priority = priority;
   }
 
   // --- Service Contract ---
 
   @Override
   public ServicePriority getPriority() {
-    return ServicePriority.Normal;
+    return this.priority;
   }
 
   @Override

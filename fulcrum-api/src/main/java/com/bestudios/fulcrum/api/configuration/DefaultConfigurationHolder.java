@@ -12,7 +12,7 @@ import java.util.Set;
 
 /**
  * Default implementation of {@link ConfigurationHolder} for YAML-based configurations.
- * <p>
+ * <br>
  * This class provides built-in support for:
  * <ul>
  *   <li>Automatic configuration loading and reloading</li>
@@ -40,6 +40,20 @@ public class DefaultConfigurationHolder implements ConfigurationHolder<YamlConfi
   /** The configuration instance. */
   protected YamlConfiguration config;
 
+  /**
+   * Constructs a new {@link DefaultConfigurationHolder} instance.
+   *
+   * @param pluginRef      The owning plugin instance.
+   * @param dataFolder     The directory where configuration files are stored.
+   * @param configFileName The name of the configuration file.
+   */
+  public DefaultConfigurationHolder(
+          @NotNull FulcrumPlugin pluginRef,
+          @NotNull File dataFolder,
+          @NotNull String configFileName
+  ) {
+    this(pluginRef, dataFolder, new File(dataFolder, configFileName));
+  }
 
   /**
    * Constructs a new {@link DefaultConfigurationHolder} instance.
